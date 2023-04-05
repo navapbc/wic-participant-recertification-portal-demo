@@ -41,9 +41,27 @@ i.e.
   flex: 1;
 }
 
+
 // Custom classes
 p {
   @include typeset('body');
+}
+
+// USWDS File Input:
+// - Override USWDS CSS that sets pointer-events: none
+// - Change border and error styling
+.usa-file-input__preview-heading {
+  pointer-events: auto;
+}
+
+.usa-file-input__target:hover {
+  border-color: #1a4480;
+}
+
+.file-input-error {
+  @include u-text('bold');
+  @include u-text('secondary-vivid');
+  @include u-margin-top(1);
 }
 
 .intro {
