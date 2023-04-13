@@ -1,3 +1,12 @@
+# NOTE: By default, this module ignores changes to the ECS service task definition and ignores changes to the ECS task
+# definition container definitions so that Github Actions can manage deploys by creating new task definition versions.
+# Sometimes we need to deploy updates to container definitions and update the ECS service. Normally, we would control
+# this behavior with a variable. However, terraform currently doesn't support expression evaluation in the `lifecycle`
+# block. See https://github.com/hashicorp/terraform/issues/3116
+#
+# To change this, TEMPORARILY comment out the lines following:
+#  `IGNORE_GITHUB_CHANGES - comment out next line to deploy changes via terraform`
+
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
@@ -122,23 +131,25 @@ resource "aws_lb_target_group" "alb_target_group" {
 #######################
 
 resource "aws_ecs_service" "app" {
-  # checkov:skip=CKV_AWS_332:Latest Fargate version irrelevant to this PR
   # checkov:skip=CKV_AWS_333:Disabling public IP may potentially mess up service discovery; also irrelevant to this PR
+
+  # Fargate platform_version must be at least 1.4.0 for Fargate + EFS to work
+  # LATEST is currently 1.4.0
+  # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform-linux-fargate.html
   name                   = var.service_name
   cluster                = var.service_cluster_arn
   launch_type            = "FARGATE"
   task_definition        = aws_ecs_task_definition.app.arn
   desired_count          = var.desired_instance_count
-  platform_version       = "1.4.0"
+  platform_version       = "LATEST"
   enable_execute_command = var.enable_exec ? true : null
 
   # Allow changes to the desired_count without differences in terraform plan.
   # This allows autoscaling to manage the desired count for us.
-  # Ignoring the task_definition allows the task revision to not get reverted if a rew revision is created outside of terraform.
   lifecycle {
     ignore_changes = [
       desired_count,
-      # Comment out the following line to allow terraform to TEMPORARILY update the task definition.
+      # IGNORE_GITHUB_CHANGES - comment out next line to deploy changes via terraform
       task_definition,
     ]
   }
@@ -248,6 +259,13 @@ resource "aws_ecs_task_definition" "app" {
     content {
       name = volume.value.volume_name
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      # IGNORE_GITHUB_CHANGES - comment out next line to deploy changes via terraform
+      container_definitions,
+    ]
   }
 }
 
