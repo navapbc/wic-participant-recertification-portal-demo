@@ -23,3 +23,7 @@ export function routeFromChanges(
 export function routeFromContact(request: Request): string {
   return routeRelative(request, "review");
 }
+
+export function routeFromName(request: Request): string {
+  return routeRelative(request, "count");
+}
