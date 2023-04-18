@@ -1,4 +1,8 @@
-id: recerts
+# Beware:
+# - This is the id for the content block that is nested inside the page_template.yml
+# - This is NOT the id for the page
+# - This must be a globally unique ID
+id: recert_context
 type: Context
 
 requests: # Requests defines all the data requests made available in this page context
@@ -23,16 +27,42 @@ events:
       params: get_data
 
 blocks:
-  # @TODO Temporary button to handle table sizing issues.
-  - id: Autosize
+  # We prefer sizeColumnsToFit over autoSize, but leaving this in case we change our mind.
+  # - id: Autosize
+  #   type: Button
+  #   events:
+  #     onClick:
+  #       - id: autosize_table
+  #         type: CallMethod
+  #         params:
+  #           blockId: table
+  #           method: autoSize
+
+  - id: fit_to_size_button
     type: Button
+    properties:
+      title: Resize table
     events:
       onClick:
-        - id: autosize_table
+        - id: fit_to_size_click
           type: CallMethod
           params:
             blockId: table
-            method: autoSize
+            method: sizeColumnsToFit
+
+  - id: download_button
+    type: Button
+    properties:
+      title: Download .csv
+    events:
+      onClick:
+        - id: download_click
+          type: CallMethod
+          params:
+            blockId: table
+            method: exportDataAsCsv
+            args:
+              - fileName: wic-mt-recertification-export.csv
 
   # The main table that shows the recertifications data
   - id: table
@@ -60,6 +90,7 @@ blocks:
       # Define each table column
       columnDefs:
         - headerName: Submission date
+          wrapText: true
           valueGetter:
             _function:
               # Use date time formatting https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat
@@ -75,14 +106,14 @@ blocks:
           wrapText: true
           valueGetter:
             _function:
-              __string.concat:
-                - __args: 0.data.form_data.name.firstName
-                - " "
-                - __args: 0.data.form_data.name.lastName
-                - ", "
-                - __args: 0.data.form_data.contact.phoneNumber
-                - ", "
-                - __args: 0.data.agency_name
+              __nunjucks:
+                template: |
+                  {{ form_data.name.lastName }}, {{ form_data.name.firstName }} {{ "(" + form_data.name.preferredName + ")" if form_data.name.preferredName }}
+                  {{ form_data.contact.phoneNumber }}
+                  Agency: {{ agency_name }}
+                on:
+                  __args: 0.data
+
           cellRenderer:
             _function:
               __nunjucks:
@@ -102,22 +133,25 @@ blocks:
 
         - headerName: WIC participant(s)
           wrapText: true
-          # This column has the most vertical content so tell the table to automatically size the row to this cell's height
-          autoHeight: true
-          # @TODO fix value formatting if copying or exporting
+          autoHeight: true # This column has the most vertical content so tell the table to automatically size the row to this cell's height
           valueGetter:
             _function:
-              __array.map:
+              __nunjucks:
+                template: |
+                  {% for participant in details %}
+                  {{ participant.lastName }}, {{ participant.firstName }} {{ "(" + participant.preferredName + ")" if participant.preferredName }}
+                  Relationship to contact person:
+                  {%- if participant.relationship == "self" %} Self
+                  {%- elif participant.relationship == "child" %} Child
+                  {%- elif participant.relationship == "grandchild" %} Grandchild
+                  {%- elif participant.relationship == "foster" %} Foster child
+                  {%- else %} Other
+                  {%- endif %}
+                  Date of birth: {{ participant.dateOfBirth }}
+                  Adjunctive eligibility: {{ "Yes" if participant.adjunctive != "" else "No" }}
+                  {% endfor -%}
                 on:
-                  __args: 0.data.form_data.details
-                callback:
-                  __function:
-                    - ___args: 0.firstName
-                    - ___args: 0.lastName
-                    - ___args: 0.preferredName
-                    - ___args: 0.relationship
-                    - ___args: 0.dateOfBirth
-                    - ___args: 0.adjunctive
+                  __args: 0.data.form_data
           cellRenderer:
             _function:
               __nunjucks:
@@ -160,15 +194,15 @@ blocks:
 
         - headerName: Household changes
           wrapText: true
-          # This column is not sortable
-          sortable: false
+          sortable: false # This column is not sortable
           valueGetter:
             _function:
-              __string.concat:
-                - "Name change or expired ID doc: "
-                - __args: 0.data.form_data.changes.idChange
-                - ", Moved: "
-                - __args: 0.data.form_data.changes.addressChange
+              __nunjucks:
+                template: |
+                  Name change or expired ID doc: {{ changes.idChange | title }}
+                  Moved: {{ changes.addressChange | title }}
+                on:
+                  __args: 0.data.form_data
           cellRenderer:
             _function:
               __nunjucks:
@@ -189,8 +223,7 @@ blocks:
         # @TODO: use S3 links. Using placeholder data for now
         - headerName: Documents
           wrapText: true
-          # This column is not sortable
-          sortable: false
+          sortable: false # This column is not sortable
           valueGetter:
             _function:
               __if:
@@ -225,8 +258,8 @@ blocks:
 
         - headerName: Updates from participant
           wrapText: true
-          # Set the max width for this column to be no more than 500px
-          maxWidth: 500
+          sortable: false # This column is not sortable
+          maxWidth: 500 # Set the max width for this column to be no more than 500px
           valueGetter:
             _function:
               __if:
