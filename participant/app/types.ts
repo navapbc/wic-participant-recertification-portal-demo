@@ -10,7 +10,7 @@ export type FileCheckError =
   | "invalidType"
   | "fileCount";
 
-export type RouteType = "changes" | "contact" | "name";
+export type RouteType = "changes" | "contact" | "count" | "name";
 
 export type ChangesData = {
   idChange: string;
@@ -41,6 +41,10 @@ export type PreviousUpload = {
 export type ContactData = {
   phoneNumber: string;
   additionalInfo: string;
+};
+
+export type CountData = {
+  householdSize: number;
 };
 
 export type RepresentativeNameData = {
