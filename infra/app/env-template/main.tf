@@ -84,6 +84,10 @@ module "participant" {
   ]
   container_env_vars = [
     {
+      name  = "S3_PRESIGNED_URL_EXPIRATION",
+      value = var.participant_s3_presigned_url_expiration,
+    },
+    {
       name  = "MAX_UPLOAD_SIZE_BYTES",
       value = var.participant_max_upload_size_bytes,
     },
