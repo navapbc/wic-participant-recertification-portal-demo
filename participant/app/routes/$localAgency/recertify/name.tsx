@@ -40,7 +40,9 @@ export const loader: LoaderFunction = async ({
   return json(
     {
       submissionID: submissionID,
-      ...setFormDefaults("representativeNameForm", existingNameData),
+      ...setFormDefaults("representativeNameForm", {
+        representative: existingNameData,
+      }),
     },
     { headers: headers }
   );
@@ -58,7 +60,7 @@ export const action = async ({ request }: { request: Request }) => {
   const parsedForm = representativeNameSchema.parse(formData);
   const { submissionID } = await cookieParser(request);
   console.log(`Got submission ${JSON.stringify(parsedForm)}`);
-  await upsertSubmissionForm(submissionID, "name", parsedForm);
+  await upsertSubmissionForm(submissionID, "name", parsedForm.representative);
   const routeTarget = routeFromName(request);
   console.log(`Completed name form; routing to ${routeTarget}`);
   return redirect(routeTarget);
@@ -72,6 +74,7 @@ export default function Name() {
     legendStyle: "srOnly",
     legal: true,
     preferred: true,
+    keyBase: "representative",
   };
 
   return (

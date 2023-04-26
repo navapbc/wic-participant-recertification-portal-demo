@@ -17,6 +17,10 @@ import { ReactElement } from "react";
 // receive the contents of this response
 export const useActionData = () => {};
 
+export const useFetcher = () => {
+  return { submit: () => {} };
+};
+
 // Can't use a real submit hook in Storybook
 export const useSubmit = () => {};
 
@@ -37,6 +41,17 @@ export function useLoaderData<T>() {
         name: "avatar.jpg",
       },
     ],
+    data: {
+      exampleRandomKey: {
+        dob: { day: 3, year: 2004, month: 2 },
+        tag: "TtmTDA5JcBAWr0tUWWmit",
+        firstName: "Cromulent",
+        lastName: "Breakfast",
+        adjunctive: "no",
+        relationship: "child",
+      },
+      anotherRandomKey: null,
+    },
   };
 }
 

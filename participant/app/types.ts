@@ -10,8 +10,13 @@ export type FileCheckError =
   | "invalidType"
   | "fileCount";
 
-export type RouteType = "changes" | "contact" | "count" | "name";
-
+export type RouteType = "changes" | "contact" | "count" | "name" | "details";
+export type RelationshipType =
+  | "self"
+  | "child"
+  | "grandchild"
+  | "foster"
+  | "other";
 export type ChangesData = {
   idChange: string;
   addressChange: string;
@@ -21,6 +26,24 @@ export type FileCheckResult = {
   mimeType?: string;
   error?: FileCheckError;
   size?: number;
+};
+
+export type Participant = {
+  relationship: RelationshipType;
+  firstName: string;
+  lastName: string;
+  preferredName?: string;
+  dob: {
+    day: number;
+    month: number;
+    year: number;
+  };
+  adjunctive: "yes" | "no";
+  tag?: string;
+};
+
+export type ParticipantForm = {
+  participant: Participant[];
 };
 
 export type SubmittedFile = {

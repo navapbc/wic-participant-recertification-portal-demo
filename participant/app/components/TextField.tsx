@@ -33,6 +33,7 @@ export type TextFieldProps = {
   defaultValue?: string;
   value?: string;
   className?: string;
+  size?: number;
 };
 
 export const TextField = (props: TextFieldProps): ReactElement => {
@@ -48,6 +49,7 @@ export const TextField = (props: TextFieldProps): ReactElement => {
     defaultValue,
     value,
     className,
+    size,
     ...otherProps
   } = props;
   const { getInputProps, error } = useField(id);
@@ -64,6 +66,7 @@ export const TextField = (props: TextFieldProps): ReactElement => {
         onChange={handleChange}
         validationStatus={validationStatus}
         defaultValue={defaultValue}
+        size={size}
         {...getInputProps({
           id: id,
           type: inputType,
