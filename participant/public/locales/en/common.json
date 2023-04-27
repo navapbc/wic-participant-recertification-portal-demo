@@ -43,6 +43,13 @@
     "noAnswer": "No",
     "button": "Continue"
   },
+  "Confirm": {
+    "title": "Thanks for starting your recertification!",
+    "intro": "During your appointment, your local WIC clinic staff will confirm the information you sent.",
+    "startOverText": "Start over",
+    "submitted": "Form submitted at: ",
+    "previouslySubmittedAlert": "You cannot review information after it’s submitted. If you need to make changes or add additional information, you must go through this form again. "
+  },
   "Contact": {
     "button": "Continue",
     "title": "Additional information",
