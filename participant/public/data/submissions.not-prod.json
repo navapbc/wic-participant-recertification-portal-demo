@@ -2,6 +2,7 @@
   "gallatin": [
     {
       "submissionId": "8795e9f3-32c8-4ecc-963a-8ebc606e58e6",
+      "submitted": true,
       "forms": {
         "name": {
           "firstName": "Abigail",
@@ -19,8 +20,12 @@
             "relationship": "child",
             "firstName": "Mandy",
             "lastName": "Cho",
-            "dateOfBirth": "04/02/2022",
-            "adjunctive": ""
+            "dob": {
+              "day": 2,
+              "month": 4,
+              "year": 2022
+            },
+            "adjunctive": "no"
           }
         ],
         "contact": {
@@ -45,6 +50,7 @@
     },
     {
       "submissionId": "f29c1ffd-a148-4a58-9592-064a0b990e7e",
+      "submitted": true,
       "forms": {
         "name": {
           "firstName": "Nicholas",
@@ -64,29 +70,45 @@
             "firstName": "Nicholas",
             "lastName": "Brown",
             "preferredName": "Nick Brown",
-            "dateOfBirth": "07/03/1993",
-            "adjunctive": "snap"
+            "dob": {
+              "day": 3,
+              "month": 7,
+              "year": 1993
+            },
+            "adjunctive": "yes"
           },
           {
             "relationship": "child",
             "firstName": "Zoe",
             "lastName": "Brown",
-            "dateOfBirth": "03/03/2020",
-            "adjunctive": "snap"
+            "dob": {
+              "day": 3,
+              "month": 3,
+              "year": 2020
+            },
+            "adjunctive": "yes"
           },
           {
             "relationship": "child",
             "firstName": "Mia",
             "lastName": "Brown",
-            "dateOfBirth": "03/03/2020",
-            "adjunctive": "snap"
+            "dob": {
+              "day": 3,
+              "month": 3,
+              "year": 2020
+            },
+            "adjunctive": "yes"
           },
           {
             "relationship": "child",
             "firstName": "Mason",
             "lastName": "Brown",
-            "dateOfBirth": "10/14/2022",
-            "adjunctive": "snap"
+            "dob": {
+              "day": 14,
+              "month": 10,
+              "year": 2022
+            },
+            "adjunctive": "yes"
           }
         ],
         "contact": {
@@ -107,6 +129,7 @@
   "missoula": [
     {
       "submissionId": "67eecabe-ed37-4ff7-a9ac-6b3e19a5c72c",
+      "submitted": true,
       "forms": {
         "name": {
           "firstName": "Elizabeth",
@@ -126,15 +149,23 @@
             "firstName": "Elizabeth",
             "lastName": "Schneider",
             "preferredName": "Liz",
-            "dateOfBirth": "11/21/1990",
-            "adjunctive": "fdpir"
+            "dob": {
+              "day": 21,
+              "month": 11,
+              "year": 1990
+            },
+            "adjunctive": "yes"
           },
           {
             "relationship": "child",
             "firstName": "Seth",
             "lastName": "Schneider",
-            "dateOfBirth": "02/23/2023",
-            "adjunctive": "fdpir"
+            "dob": {
+              "day": 23,
+              "month": 2,
+              "year": 2023
+            },
+            "adjunctive": "yes"
           }
         ],
         "contact": {

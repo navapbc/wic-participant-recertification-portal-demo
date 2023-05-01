@@ -22,6 +22,7 @@ requests: # Requests defines all the data requests made available in this page c
         ) d on (s.submission_id = d.submission_id)
         left join staff_users su on (s.local_agency_id = su.local_agency_id)
         where su.staff_user_id = :staff_user_id
+        and s.submitted = true
         group by sf.submission_id, s.updated_at, la.name, d.s3_documents
         order by s.updated_at desc;
       parameters:
@@ -176,14 +177,11 @@ blocks:
                   {% for participant in details %}
                   {{ participant.lastName }}, {{ participant.firstName }} {{ "(" + participant.preferredName + ")" if participant.preferredName }}
                   Relationship to contact person:
-                  {%- if participant.relationship == "self" %} Self
-                  {%- elif participant.relationship == "child" %} Child
-                  {%- elif participant.relationship == "grandchild" %} Grandchild
-                  {%- elif participant.relationship == "foster" %} Foster child
-                  {%- else %} Other
+                  {% if participant.relationship == "foster" -%} Foster child
+                  {% else -%} {{ participant.relationship | title }}
                   {%- endif %}
-                  Date of birth: {{ participant.dateOfBirth }}
-                  Adjunctive eligibility: {{ "Yes" if participant.adjunctive != "" else "No" }}
+                  Date of birth: {{ participant.dob.month }}/{{ participant.dob.day }}/{{ participant.dob.year }}
+                  Adjunctive eligibility: {{ participant.adjunctive | title }}
                   {% endfor -%}
                 on:
                   __args: 0.data.form_data
@@ -201,25 +199,13 @@ blocks:
                       </div>
                       <ul>
                         <li class="relationship">Relationship to contact person:
-                          {% if participant.relationship == "self" %}
-                            Self
-                          {% elif participant.relationship == "child" %}
-                            Child
-                          {% elif participant.relationship == "grandchild" %}
-                            Grandchild
-                          {% elif participant.relationship == "foster" %}
-                            Foster child
-                          {% else %}
-                            Other
-                          {% endif %}
+                          {% if participant.relationship == "foster" -%} Foster child
+                          {% else -%} {{ participant.relationship | title }}
+                          {%- endif %}
                         </li>
-                        <li class="date-of-birth">Date of birth: {{ participant.dateOfBirth }}</li>
+                        <li class="date-of-birth">Date of birth: {{ participant.dob.month }}/{{ participant.dob.day }}/{{ participant.dob.year }}</li>
                         <li class="adjunctive">Adjunctive eligibility:
-                          {% if participant.adjunctive != "" %}
-                            Yes
-                          {% else %}
-                            No
-                          {% endif %}
+                          {{ participant.adjunctive | title }}
                         </li>
                       </ul>
                     </div>
@@ -261,18 +247,17 @@ blocks:
           field:
           valueGetter:
             _function:
-              __log:
-                __nunjucks:
-                  template: |
-                    {%- if s3_documents %}
-                    {%- for filename, url in s3_documents %}
-                    {{ filename }}{% if not loop.last -%},{%- endif -%}
-                    {% endfor -%}
-                    {%- else -%}
-                    No documents required
-                    {%- endif -%}
-                  on:
-                    __args: 0.data
+              __nunjucks:
+                template: |
+                  {%- if s3_documents %}
+                  {%- for filename, url in s3_documents %}
+                  {{ filename }}{% if not loop.last -%},{%- endif -%}
+                  {% endfor -%}
+                  {%- else -%}
+                  No documents required
+                  {%- endif -%}
+                on:
+                  __args: 0.data
           cellRenderer:
             _function:
               __nunjucks:
