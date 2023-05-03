@@ -18,12 +18,13 @@ import { useLoaderData } from "@remix-run/react";
 import type { Params } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/node";
 import { cookieParser } from "app/cookies.server";
-import type { CountData } from "app/types";
-import { routeFromCount } from "~/utils/routing";
+import { checkRoute, routeFromCount } from "~/utils/routing";
 import {
   upsertSubmissionForm,
+  fetchSubmissionData,
   findSubmissionFormData,
 } from "app/utils/db.server";
+import type { CountData } from "~/types";
 
 const countValidator = withZod(countSchema);
 
@@ -35,6 +36,8 @@ export const loader: LoaderFunction = async ({
   params: Params<string>;
 }) => {
   const { submissionID, headers } = await cookieParser(request, params);
+  const existingSubmissionData = await fetchSubmissionData(submissionID);
+  checkRoute(request, existingSubmissionData);
   const existingCountData = (await findSubmissionFormData(
     submissionID,
     "count"
