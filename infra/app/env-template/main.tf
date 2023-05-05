@@ -120,6 +120,14 @@ module "participant" {
       name  = "PUBLIC_DEMO_MODE",
       value = false,
     },
+    {
+      name  = "MATOMO_URL_BASE",
+      value = var.analytics_url,
+    },
+    {
+      name  = "MATOMO_SECURE",
+      value = true,
+    }
   ]
   service_ssm_resource_paths = [
     module.participant_database.admin_db_url_secret_name,
@@ -213,6 +221,7 @@ module "staff" {
       name  = "LOWDEFY_SECRET_OPENID_DOMAIN",
       value = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${module.staff_idp.user_pool_id}/.well-known/openid-configuration",
     },
+
   ]
   service_ssm_resource_paths = [
     module.participant_database.admin_db_url_secret_name,
@@ -276,7 +285,7 @@ module "analytics" {
     {
       name  = "MATOMO_DATABASE_DBNAME",
       value = local.analytics_database_name,
-    },
+    }
   ]
   service_ssm_resource_paths = [
     module.analytics_database.admin_db_host_secret_name,
