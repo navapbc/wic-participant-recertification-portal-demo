@@ -20,6 +20,7 @@ import { useEffect } from "react";
 import MatomoTracker from "@jonkoops/matomo-tracker";
 import { useHydrated } from "remix-utils";
 import { MATOMO_SECURE, MATOMO_URL_BASE } from "app/utils/config.server";
+import logger from "app/utils/logging.server";
 
 export function useChangeLanguage(locale: string) {
   const { i18n } = useTranslation();
@@ -27,7 +28,14 @@ export function useChangeLanguage(locale: string) {
     const changeLanguage = async () => {
       await i18n.changeLanguage(locale);
     };
-    changeLanguage().catch(console.error);
+    changeLanguage().catch((error) => {
+      logger.error({
+        location: "root",
+        type: "changeLanguage.error",
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        error: error,
+      });
+    });
   }, [locale, i18n]);
 }
 
@@ -56,7 +64,14 @@ type LoaderData = { locale: string; demoMode: string; missingData: string };
 export const loader: LoaderFunction = async ({ request, params }) => {
   const redirectTarget = await validRoute(request, params);
   if (redirectTarget) {
-    console.log(`Redirecting to baseUrl ${redirectTarget}`);
+    logger.info(
+      {
+        location: "routes/root",
+        type: "redirect.baseURL",
+        target: redirectTarget,
+      },
+      `Redirecting to baseUrl ${redirectTarget}`
+    );
     throw redirect(redirectTarget);
   }
 
