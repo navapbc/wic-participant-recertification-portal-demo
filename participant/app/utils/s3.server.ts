@@ -4,6 +4,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  PutObjectCommand,
   NotFound,
 } from "@aws-sdk/client-s3";
 import type { PutObjectCommandInput } from "@aws-sdk/client-s3";
@@ -101,10 +102,12 @@ export const headFilesizeFromS3 = async (
 
 export const getURLFromS3 = async (
   key: string,
+  action: "GET" | "PUT" = "GET",
   duration?: number
 ): Promise<string | undefined> => {
   const expiresIn = duration || S3_PRESIGNED_URL_EXPIRATION;
-  const command = new GetObjectCommand({
+  const s3command = action === "GET" ? GetObjectCommand : PutObjectCommand;
+  const command = new s3command({
     Key: key,
     Bucket: BUCKET,
   });

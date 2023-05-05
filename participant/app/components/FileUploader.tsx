@@ -18,6 +18,8 @@ export type FileUploaderProps = {
   id: string;
   name: string;
   labelKey: i18nKey;
+  addFileHook?: Function;
+  removeFileHook?: Function;
   accept?: string;
   required?: boolean;
   maxFileSizeInBytes?: number;
@@ -48,6 +50,8 @@ export const FileUploaderForwardRef: React.ForwardRefRenderFunction<
     name,
     labelKey,
     accept,
+    addFileHook,
+    removeFileHook,
     required,
     maxFileSizeInBytes = 26_214_400,
     maxFileCount = 20,
@@ -128,7 +132,7 @@ export const FileUploaderForwardRef: React.ForwardRefRenderFunction<
 
     return fileTypeAllowed;
   };
-  const addNewFiles = (newFiles: FileList) => {
+  const addNewFiles = async (newFiles: FileList) => {
     setErrorMessage("");
 
     if (
@@ -138,7 +142,16 @@ export const FileUploaderForwardRef: React.ForwardRefRenderFunction<
       for (let file of newFiles) {
         if (file.size <= maxFileSizeInBytes) {
           if (fileTypeCheck(file)) {
-            files[file.name] = file;
+            if (addFileHook) {
+              const response = await addFileHook(file);
+              if (response && response === "fileCount") {
+                setErrorMessage(`${labelKey}.fileCountError`);
+              } else {
+                files[file.name] = file;
+              }
+            } else {
+              files[file.name] = file;
+            }
           } else {
             setErrorMessage(`${labelKey}.fileTypeError`);
           }
@@ -149,6 +162,7 @@ export const FileUploaderForwardRef: React.ForwardRefRenderFunction<
     } else {
       setErrorMessage(`${labelKey}.fileCountError`);
     }
+
     return { ...files };
   };
   const removeFileList = (removeList: PreviousUpload[]) => {
@@ -159,15 +173,20 @@ export const FileUploaderForwardRef: React.ForwardRefRenderFunction<
       setFiles({ ...files });
     }
   };
-  const handleNewFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setErrorMessage("");
     const { files: newFiles } = e.target;
     if (newFiles?.length) {
-      let updatedFiles = addNewFiles(newFiles);
+      let updatedFiles = await addNewFiles(newFiles);
       setFiles(updatedFiles);
     }
   };
-  const removeFile = (fileName: string) => {
+  const removeFile = async (fileName: string) => {
+    if (removeFileHook) {
+      await removeFileHook(fileName);
+    }
     setErrorMessage("");
     delete files[fileName];
     setFiles({ ...files });
