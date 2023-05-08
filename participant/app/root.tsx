@@ -59,7 +59,13 @@ export function links() {
   ];
 }
 
-type LoaderData = { locale: string; demoMode: string; missingData: string };
+type LoaderData = {
+  locale: string;
+  demoMode: string;
+  missingData: string;
+  MATOMO_SECURE: boolean;
+  MATOMO_URL_BASE: string;
+};
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const redirectTarget = await validRoute(request, params);
@@ -81,7 +87,13 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   const missingData =
     url.searchParams.get("missing-data") == "true" ? "true" : "false";
-  return json<LoaderData>({ locale, demoMode, missingData });
+  return json<LoaderData>({
+    locale,
+    demoMode,
+    missingData,
+    MATOMO_SECURE,
+    MATOMO_URL_BASE,
+  });
 };
 
 export const handle = {
@@ -94,7 +106,8 @@ export const handle = {
 
 export default function App() {
   // Get the locale from the loader
-  const { locale, demoMode, missingData } = useLoaderData<LoaderData>();
+  const { locale, demoMode, missingData, MATOMO_SECURE, MATOMO_URL_BASE } =
+    useLoaderData<LoaderData>();
   const { i18n } = useTranslation();
 
   // This hook will change the i18n instance language to the current locale
@@ -106,7 +119,7 @@ export default function App() {
   const isHydrated = useHydrated();
   if (isHydrated && MATOMO_URL_BASE) {
     const tracker = new MatomoTracker({
-      urlBase: MATOMO_URL_BASE,
+      urlBase: `//${MATOMO_URL_BASE}`,
       siteId: 1,
       disabled: false, // optional, false by default. Makes all tracking calls no-ops if set to true.
       heartBeat: {
@@ -122,6 +135,8 @@ export default function App() {
         setSecureCookie: MATOMO_SECURE,
         setRequestMethod: "POST",
         trackPageView: true,
+        setVisitorCookieTimeout: 1800,
+        setReferralCookieTimeout: 1800,
       },
     });
 
@@ -141,6 +156,13 @@ export default function App() {
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
+        <noscript>
+          <img
+            referrerPolicy="no-referrer-when-downgrade"
+            src={`//${MATOMO_URL_BASE}/matomo.php?idsite=1&rec=1`}
+            alt=""
+          />
+        </noscript>
       </body>
     </html>
   );
