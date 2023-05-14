@@ -10,6 +10,9 @@ import type {
   SubmissionData,
   SubmittedFile,
 } from "app/types";
+import { S3_PRESIGNED_URL_RENEWAL_THRESHOLD } from "app/utils/config.server";
+import { getSecondsAgo } from "app/utils/date";
+
 export type SubmissionWithAgency = Prisma.PromiseReturnType<
   typeof findSubmission
 >;
@@ -102,6 +105,42 @@ export const listDocuments = async (submissionID: string) => {
       s3Key: true,
       s3Url: true,
       originalFilename: true,
+    },
+  });
+};
+
+export const listExpiringDocuments = async () => {
+  return await db.document.findMany({
+    where: {
+      updatedAt: {
+        lt: getSecondsAgo(S3_PRESIGNED_URL_RENEWAL_THRESHOLD),
+      },
+    },
+    select: {
+      submissionId: true,
+      originalFilename: true,
+      s3Key: true,
+      updatedAt: true,
+    },
+  });
+};
+
+export const updateDocumentS3Url = async (
+  submissionID: string,
+  filename: string,
+  s3Url: string
+) => {
+  const existingDocument = await findDocument(submissionID, filename);
+  if (!existingDocument) {
+    throw Error(`Unable to find document for ${submissionID} ${filename}`);
+  }
+  return await db.document.update({
+    where: {
+      documentId: existingDocument.documentId,
+    },
+    data: {
+      updatedAt: new Date(),
+      s3Url: s3Url,
     },
   });
 };

@@ -45,12 +45,23 @@ variable "participant_s3_presigned_url_expiration" {
   default     = "604800"
 }
 
+variable "participant_s3_presigned_url_renewal_threshold" {
+  type        = string
+  description = "The number of seconds a presigned s3 url is active before it is renewed"
+  default     = 7 * 60 * 60 # 25200 seconds = 7 hours
+}
+
 variable "participant_enable_exec" {
   type        = bool
   description = "Enables ECS exec for the participant service"
   default     = false
 }
 
+variable "participant_log_level" {
+  type        = string
+  description = "Log level for participant container"
+  default     = "warn"
+}
 
 ##############################################
 ## Variables for the staff app

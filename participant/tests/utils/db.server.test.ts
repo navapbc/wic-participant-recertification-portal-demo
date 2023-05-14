@@ -10,6 +10,8 @@ import {
   deleteDocument,
   upsertDocument,
   listDocuments,
+  listExpiringDocuments,
+  updateDocumentS3Url,
   upsertStaffUser,
   fetchSubmissionData,
 } from "app/utils/db.server";
@@ -308,6 +310,72 @@ it("lists documents", async () => {
   });
   expect(foundDocuments[0]).toEqual(mockument);
   expect(foundDocuments[1]).toEqual(mockumentTwo);
+});
+
+it("lists documents with expiring s3 presigned urls", async () => {
+  jest.useFakeTimers().setSystemTime(new Date("2020-01-10"));
+  const submissionID = uuidv4();
+  const mockument = getDocument(
+    submissionID,
+    "another-file.png",
+    "image/png",
+    1_024_000,
+    new Date("2020-01-01")
+  );
+
+  prismaMock.document.findMany.mockResolvedValue([mockument]);
+  const foundDocuments = await listExpiringDocuments();
+  expect(foundDocuments.length).toBe(1);
+  expect(prismaMock.document.findMany).toHaveBeenCalledWith({
+    where: {
+      updatedAt: {
+        lt: new Date("2020-01-09T17:00:00.000Z"),
+      },
+    },
+    select: {
+      originalFilename: true,
+      s3Key: true,
+      submissionId: true,
+      updatedAt: true,
+    },
+  });
+  expect(foundDocuments[0]).toEqual(mockument);
+});
+
+it("updating a document s3 url throws an exception if there is no document", async () => {
+  const submissionId = uuidv4();
+  const filename = "bogusfile";
+  const s3Url = "boguss3url";
+  prismaMock.document.findFirst.mockResolvedValue(null);
+  await expect(async () => {
+    await updateDocumentS3Url(submissionId, filename, s3Url);
+  }).rejects.toThrow(`Unable to find document for ${submissionId} ${filename}`);
+});
+
+it("updating a document s3 url looks up the document and updates the s3 url and updatedAt", async () => {
+  const mockument = getDocument();
+  prismaMock.document.findFirst.mockResolvedValue(mockument);
+  const updatedS3Url = `http://127.0.0.1/${mockument.submissionId}/${mockument.originalFilename}?updated`;
+  await updateDocumentS3Url(
+    mockument.submissionId,
+    mockument.originalFilename,
+    updatedS3Url
+  );
+  expect(prismaMock.document.findFirst).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: {
+        submissionId: mockument.submissionId,
+        originalFilename: mockument.originalFilename,
+      },
+    })
+  );
+  expect(prismaMock.document.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: {
+        documentId: mockument.documentId,
+      },
+    })
+  );
 });
 
 it("upserting a staff user looks up localagency and creates a staff user if there is none", async () => {

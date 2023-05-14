@@ -15,19 +15,20 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 locals {
-  project_name                 = module.project_config.project_name
-  app_name                     = module.app_config.app_name
-  cluster_name                 = "${local.project_name}-${local.app_name}-${var.environment_name}"
-  participant_database_name    = "${local.project_name}-participant-${var.environment_name}"
-  participant_service_name     = "${local.project_name}-participant-${var.environment_name}"
-  staff_cognito_user_pool_name = "${local.project_name}-staff-${var.environment_name}"
-  staff_service_name           = "${local.project_name}-staff-${var.environment_name}"
-  analytics_service_name       = "${local.project_name}-analytics-${var.environment_name}"
-  analytics_database_name      = "${local.project_name}-analytics-${var.environment_name}"
-  document_upload_s3_name      = "${local.project_name}-doc-upload-${var.environment_name}"
-  side_load_s3_name            = "${local.project_name}-side-load-${var.environment_name}"
-  contact_email                = "wic-projects-team@navapbc.com"
-  staff_idp_client_domain      = "${var.environment_name}-idp.wic-services.org"
+  project_name                            = module.project_config.project_name
+  app_name                                = module.app_config.app_name
+  cluster_name                            = "${local.project_name}-${local.app_name}-${var.environment_name}"
+  participant_database_name               = "${local.project_name}-participant-${var.environment_name}"
+  participant_service_name                = "${local.project_name}-participant-${var.environment_name}"
+  staff_cognito_user_pool_name            = "${local.project_name}-staff-${var.environment_name}"
+  staff_service_name                      = "${local.project_name}-staff-${var.environment_name}"
+  analytics_service_name                  = "${local.project_name}-analytics-${var.environment_name}"
+  analytics_database_name                 = "${local.project_name}-analytics-${var.environment_name}"
+  document_upload_s3_name                 = "${local.project_name}-doc-upload-${var.environment_name}"
+  refresh_s3_presigned_urls_schedule_name = "${local.project_name}-s3-refresh-schedule-${var.environment_name}"
+  side_load_s3_name                       = "${local.project_name}-side-load-${var.environment_name}"
+  contact_email                           = "wic-projects-team@navapbc.com"
+  staff_idp_client_domain                 = "${var.environment_name}-idp.wic-services.org"
 }
 
 module "project_config" {
@@ -73,6 +74,7 @@ module "participant" {
   memory                             = 2048
   healthcheck_path                   = "/healthcheck"
   service_deployment_maximum_percent = 250
+  task_role_max_session_duration     = 12 * 60 * 60 # 12 hours
   # The database seed needs longer lead time before healthchecks kick in to kill the container
   healthcheck_start_period = 120
   enable_exec              = var.participant_enable_exec
@@ -95,6 +97,10 @@ module "participant" {
     {
       name  = "S3_PRESIGNED_URL_EXPIRATION",
       value = var.participant_s3_presigned_url_expiration,
+    },
+    {
+      name  = "S3_PRESIGNED_URL_RENEWAL_THRESHOLD",
+      value = var.participant_s3_presigned_url_renewal_threshold,
     },
     {
       name  = "MAX_UPLOAD_SIZE_BYTES",
@@ -127,6 +133,10 @@ module "participant" {
     {
       name  = "MATOMO_SECURE",
       value = true,
+    },
+    {
+      name  = "LOG_LEVEL",
+      value = var.participant_log_level,
     }
   ]
   service_ssm_resource_paths = [
@@ -329,6 +339,18 @@ resource "aws_s3_bucket_cors_configuration" "doc_upload_cors" {
     expose_headers  = []
     max_age_seconds = 3000
   }
+}
+
+module "refresh_s3_presigned_urls" {
+  source                  = "../../modules/task-scheduled"
+  schedule_name           = local.refresh_s3_presigned_urls_schedule_name
+  cluster_name            = local.cluster_name
+  task_definition_family  = local.participant_service_name
+  container_task_override = "{\"containerOverrides\": [{\"name\": \"${local.participant_service_name}\", \"command\": [\"npm\", \"run\", \"refresh-s3-urls\"]}]}"
+  security_group_ids      = [module.participant.app_security_group.id]
+  subnet_ids              = data.aws_subnets.default.ids
+  schedule_expression     = "cron(0 */3 * * ? *)"
+  schedule_enabled        = true
 }
 
 module "side_load" {
