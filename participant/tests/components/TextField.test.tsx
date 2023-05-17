@@ -46,6 +46,8 @@ it("should match display required marker if required is true", () => {
   renderWithRouter(<TextField {...testProps} required={true} />);
   const required = screen.getByText("*");
   expect(required).toBeInTheDocument;
+  const textbox = screen.getByRole("textbox");
+  expect(textbox.getAttribute("required")).toBe("");
 });
 
 it("should display the value when it is a textfield", () => {

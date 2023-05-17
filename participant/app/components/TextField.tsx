@@ -21,6 +21,7 @@ export type TextFieldProps = {
   labelClassName?: string;
   hint?: ReactElement;
   required?: boolean;
+  requiredStar?: boolean;
   type?: "input" | "textarea";
   inputType:
     | "number"
@@ -45,6 +46,7 @@ export const TextField = (props: TextFieldProps): ReactElement => {
     labelClassName,
     hint,
     required,
+    requiredStar = required,
     type,
     inputType,
     defaultValue,
@@ -65,13 +67,14 @@ export const TextField = (props: TextFieldProps): ReactElement => {
     <>
       <Label htmlFor={id} className={labelClassName} hint={hint}>
         <Trans i18nKey={labelKey} />
-        {required && <Required />}
+        {requiredStar && <Required />}
       </Label>
       {error && <ErrorMessage id={`${id}-error-message`}>{error}</ErrorMessage>}
       <TextTypeClass
         onChange={handleChange}
         defaultValue={defaultValue}
         size={size}
+        required={required}
         {...errorProp}
         {...getInputProps({
           id: id,
