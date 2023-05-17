@@ -1,4 +1,4 @@
-import { FormGroup, Label } from "@trussworks/react-uswds";
+import { FormGroup } from "@trussworks/react-uswds";
 import { FilePreview } from "app/components/FilePreview";
 import { FileInput } from "app/components/internal/FileInput";
 import { Trans, useTranslation } from "react-i18next";
@@ -200,7 +200,7 @@ export const FileUploaderForwardRef: React.ForwardRefRenderFunction<
     <FormGroup>
       {children}
       {previews}
-      <Label htmlFor={id}>{currentDocumentString}</Label>
+      <div className="margin-top-3">{currentDocumentString}</div>
       {errorMessage && (
         <div data-testid="file-input-error" className="file-input-error">
           <span className="display-block">
@@ -221,6 +221,8 @@ export const FileUploaderForwardRef: React.ForwardRefRenderFunction<
         draggable={true}
         emptyKey={`${labelKey}.noFiles`}
         notEmptyKey={`${labelKey}.additionalFiles`}
+        emptyAriaKey={`${labelKey}.noFilesAria`}
+        notEmptyAriaKey={`${labelKey}.additionalFilesAria`}
         fileTypeErrorKey={`${labelKey}.fileTypeError`}
         empty={currentDocumentNumber == 0}
       />

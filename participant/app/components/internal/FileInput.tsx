@@ -15,6 +15,7 @@ import React, {
 import classnames from "classnames";
 import type { i18nKey } from "~/types";
 import { useTranslation } from "react-i18next";
+import { Label } from "@trussworks/react-uswds";
 
 export type FileInputProps = {
   id: string;
@@ -26,6 +27,8 @@ export type FileInputProps = {
   onDrop?: (e: React.DragEvent) => void;
   emptyKey: i18nKey;
   notEmptyKey: i18nKey;
+  emptyAriaKey: i18nKey;
+  notEmptyAriaKey: i18nKey;
   fileTypeErrorKey: i18nKey;
   empty?: boolean;
 };
@@ -50,6 +53,8 @@ export const FileInputForwardRef: React.ForwardRefRenderFunction<
     onDrop,
     emptyKey,
     notEmptyKey,
+    emptyAriaKey,
+    notEmptyAriaKey,
     fileTypeErrorKey,
     empty = true,
     ...inputProps
@@ -63,6 +68,7 @@ export const FileInputForwardRef: React.ForwardRefRenderFunction<
   const [files, setFiles] = useState<File[]>([]);
   const { t } = useTranslation();
   const helpText = empty ? t(emptyKey) : t(notEmptyKey);
+  const ariaHelpText = empty ? t(emptyAriaKey) : t(notEmptyAriaKey);
   useImperativeHandle(
     ref,
     () => ({
@@ -168,10 +174,12 @@ export const FileInputForwardRef: React.ForwardRefRenderFunction<
         onDrop={handleDrop}
         hidden={javascriptDisabled}
       >
-        <div
+        <Label
           data-testid="file-input-instructions"
           className={instructionClasses}
-          aria-hidden="true"
+          id="file-input-instructions"
+          aria-label={ariaHelpText}
+          htmlFor={id}
         >
           <span
             className="usa-file-input__choose text-bold"
@@ -179,7 +187,7 @@ export const FileInputForwardRef: React.ForwardRefRenderFunction<
           >
             {helpText}
           </span>
-        </div>
+        </Label>
         <div data-testid="file-input-box" className={inputBoxClass}></div>
         {showError && (
           <div

@@ -147,6 +147,8 @@
     "label": "Upload documents",
     "document": "Document",
     "ifNeeded": "(if needed)",
+    "noFilesAria": "Click to choose a file to upload",
+    "additionalFilesAria": "Click to choose another file to upload",
     "noFiles": "Choose a file to upload",
     "additionalFiles": "Choose another file to upload",
     "filetypehint": "You can select a PDF, JPEG, PNG, or GIF file.",
