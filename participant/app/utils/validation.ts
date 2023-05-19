@@ -91,40 +91,53 @@ export const participantSchema = zfd.formData({
       ),
       preferredName: zfd.text(z.string().optional()),
 
-      dob: z.object({
-        day: zfd.numeric(
-          z
-            .number()
-            .min(1, {
+      dob: z
+        .object({
+          day: zfd.numeric(),
+          month: zfd.numeric(),
+          year: zfd.numeric(),
+        })
+        .superRefine((val, ctx) => {
+          if (!val.year || !val.month || !val.day) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
               message:
                 "Date of birth must include a valid month, day, and year.",
-            })
-            .max(31, {
+            });
+            return z.NEVER;
+          }
+          const date = new Date(val.year, val.month - 1, val.day);
+          const now = new Date();
+          if (date.valueOf() == undefined) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Enter a valid date of birth",
+            });
+            return z.NEVER;
+          }
+          if (date.getMonth() != val.month - 1 || date.getDate() != val.day) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
               message:
                 "Date of birth must include a valid month, day, and year.",
-            })
-        ),
-        month: zfd.numeric(
-          z
-            .number()
-            .min(1, {
-              message:
-                "Date of birth must include a valid month, day, and year.",
-            })
-            .max(12, {
-              message:
-                "Date of birth must include a valid month, day, and year.",
-            })
-        ),
-        year: zfd.numeric(
-          z
-            .number()
-            .min(1912, { message: "Enter a valid date of birth." })
-            .max(2023, {
+            });
+            return z.NEVER;
+          }
+          if (date.getFullYear() < now.getFullYear() - 110) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Enter a valid date of birth.",
+            });
+            return z.NEVER;
+          }
+          if (date > now) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
               message: "Date of birth must be today or in the past.",
-            })
-        ),
-      }),
+            });
+            return z.NEVER;
+          }
+        }),
       adjunctive: zfd.text(
         z.enum(["yes", "no"], {
           required_error:
