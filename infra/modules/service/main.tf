@@ -46,8 +46,11 @@ resource "aws_lb" "alb" {
   # https://docs.bridgecrew.io/docs/ensure-that-alb-drops-http-headers
   drop_invalid_header_fields = true
 
-  # TODO(https://github.com/navapbc/template-infra/issues/162) Add access logs
-  # checkov:skip=CKV_AWS_91:Add access logs in future PR
+  access_logs {
+    enabled = true
+    prefix  = var.service_name
+    bucket  = var.service_name
+  }
 }
 
 # NOTE: for the demo we expose private http endpoint
@@ -286,6 +289,14 @@ resource "aws_cloudwatch_log_group" "service_logs" {
   # TODO(https://github.com/navapbc/template-infra/issues/164) Encrypt with customer managed KMS key
   # checkov:skip=CKV_AWS_158:Encrypt service logs with customer key in future work
 }
+####################
+## Logging Bucket ##
+####################
+
+module "alb_logging" {
+  source         = "../s3-encrypted"
+  s3_bucket_name = var.service_name
+}
 
 ####################
 ## Access Control ##
@@ -516,4 +527,17 @@ resource "aws_security_group" "app" {
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+##############################################
+## WAF Association
+##############################################
+data "aws_wafv2_web_acl" "waf" {
+  name  = var.waf_name
+  scope = "REGIONAL"
+}
+
+resource "aws_wafv2_web_acl_association" "alb" {
+  resource_arn = aws_lb.alb.arn # load balancer arn
+  web_acl_arn  = data.aws_wafv2_web_acl.waf.arn
 }
