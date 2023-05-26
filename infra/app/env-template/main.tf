@@ -1,18 +1,17 @@
-# TODO(https://github.com/navapbc/template-infra/issues/152) use non-default VPC
-data "aws_vpc" "default" {
-  default = true
-}
-
-# TODO(https://github.com/navapbc/template-infra/issues/152) use private subnets
-data "aws_subnets" "default" {
-  filter {
-    name   = "default-for-az"
-    values = [true]
-  }
-}
+############################################################################################
+## The root module used to manage all per-environment resources
+############################################################################################
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+module "project_config" {
+  source = "../../project-config"
+}
+
+module "app_config" {
+  source = "../app-config"
+}
 
 locals {
   project_name                            = module.project_config.project_name
@@ -32,34 +31,86 @@ locals {
   waf_name                                = "${local.project_name}-${local.project_name}-waf"
 }
 
-module "project_config" {
-  source = "../../project-config"
+############################################################################################
+## VPC
+## - Currently uses the default VPC
+############################################################################################
+
+# TODO(https://github.com/navapbc/template-infra/issues/152) use non-default VPC
+data "aws_vpc" "default" {
+  default = true
 }
+
+# TODO(https://github.com/navapbc/template-infra/issues/152) use private subnets
+data "aws_subnets" "default" {
+  filter {
+    name   = "default-for-az"
+    values = [true]
+  }
+}
+
+############################################################################################
+## Document upload
+## - Creates an IAM user to pass to the AWS SDK in the participant app for S3 operations
+## - Creates an S3 bucket
+## - Sets CORS policy for the document upload S3 bucket
+############################################################################################
+
+module "s3_machine_user" {
+  # checkov:skip=CKV_AWS_273:Explicitly using an IAM user for longer S3 presigned url expiration times
+
+  source            = "../../modules/iam-machine-user"
+  machine_user_name = local.document_upload_s3_name
+}
+
+module "doc_upload" {
+  source             = "../../modules/s3-encrypted"
+  s3_bucket_name     = local.document_upload_s3_name
+  log_target_prefix  = var.environment_name
+  read_group_names   = [module.s3_machine_user.machine_user_group.name]
+  write_group_names  = [module.s3_machine_user.machine_user_group.name]
+  delete_group_names = [module.s3_machine_user.machine_user_group.name]
+}
+
+resource "aws_s3_bucket_cors_configuration" "doc_upload_cors" {
+  bucket = local.document_upload_s3_name
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT"]
+    allowed_origins = ["https://${var.participant_url}"]
+    expose_headers  = []
+    max_age_seconds = 3000
+  }
+}
+
+############################################################################################
+## ECS service cluster
+## - Contains services for the participant, staff, and analytics applications
+############################################################################################
+
+module "service_cluster" {
+  source       = "../../modules/service-cluster"
+  cluster_name = local.cluster_name
+}
+
+############################################################################################
+## The participant application
+## - Creates an RDS Aurora postgresql database
+## - Creates an ECS service and task for the Remix application
+## - Sets autoscaling for the ECS service
+## - Creates an Eventbridge schedule to update S3 presigned urls saved to the database
+##   so that they don't expire and become inaccessible
+## - Creates an S3 bucket to side load data, such as staff users, into the database
+############################################################################################
 
 data "aws_ecr_repository" "participant_image_repository" {
   name = "${local.project_name}-participant"
 }
 
-data "aws_ecr_repository" "staff_image_repository" {
-  name = "${local.project_name}-staff"
-}
-
-data "aws_ecr_repository" "analytics_image_repository" {
-  name = "${local.project_name}-analytics"
-}
-
-module "app_config" {
-  source = "../app-config"
-}
-
 module "participant_database" {
   source        = "../../modules/database"
   database_name = local.participant_database_name
-}
-
-module "service_cluster" {
-  source       = "../../modules/service-cluster"
-  cluster_name = local.cluster_name
 }
 
 module "participant" {
@@ -80,20 +131,27 @@ module "participant" {
   # The database seed needs longer lead time before healthchecks kick in to kill the container
   healthcheck_start_period = 120
   enable_exec              = var.participant_enable_exec
-  # @TODO: We shouldn't need to be doing quite so much string interpolation. Perhaps we can pass back the arns instead of the secret_names.
   container_secrets = [
     {
       name      = "DATABASE_URL",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.participant_database.admin_db_url_secret_name}"
+      valueFrom = module.participant_database.admin_db_url_secret_arn,
     },
     {
       name      = "POSTGRES_PASSWORD",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.participant_database.admin_password_secret_name}"
+      valueFrom = module.participant_database.admin_password_secret_arn,
     },
     {
       name      = "POSTGRES_USER",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.participant_database.admin_user_secret_name}"
-    }
+      valueFrom = module.participant_database.admin_user_secret_arn,
+    },
+    {
+      name      = "AWS_ACCESS_KEY_ID",
+      valueFrom = module.s3_machine_user.access_key_id_secret_arn,
+    },
+    {
+      name      = "AWS_SECRET_ACCESS_KEY",
+      valueFrom = module.s3_machine_user.secret_access_key_secret_arn,
+    },
   ]
   container_env_vars = [
     {
@@ -142,9 +200,11 @@ module "participant" {
     }
   ]
   service_ssm_resource_paths = [
-    module.participant_database.admin_db_url_secret_name,
-    module.participant_database.admin_password_secret_name,
-    module.participant_database.admin_user_secret_name,
+    module.participant_database.admin_db_url_secret_arn,
+    module.participant_database.admin_password_secret_arn,
+    module.participant_database.admin_user_secret_arn,
+    module.s3_machine_user.access_key_id_secret_arn,
+    module.s3_machine_user.secret_access_key_secret_arn,
   ]
   container_bind_mounts = {
     "tmp" : {
@@ -163,6 +223,36 @@ module "participant_autoscale" {
   ecs_cluster_name            = local.cluster_name
   ecs_service_name            = local.participant_service_name
   ecs_task_executor_role_name = "${local.participant_service_name}-task-executor"
+}
+
+module "refresh_s3_presigned_urls" {
+  source                  = "../../modules/task-scheduled"
+  schedule_name           = local.refresh_s3_presigned_urls_schedule_name
+  cluster_name            = local.cluster_name
+  task_definition_family  = local.participant_service_name
+  container_task_override = "{\"containerOverrides\": [{\"name\": \"${local.participant_service_name}\", \"command\": [\"npm\", \"run\", \"refresh-s3-urls\"]}]}"
+  security_group_ids      = [module.participant.app_security_group.id]
+  subnet_ids              = data.aws_subnets.default.ids
+  schedule_expression     = "cron(0 9 * * ? *)" # Run once a day at ~3am US time
+  schedule_enabled        = true
+}
+
+module "side_load" {
+  source            = "../../modules/s3-encrypted"
+  s3_bucket_name    = local.side_load_s3_name
+  log_target_prefix = var.environment_name
+  read_group_names  = [module.s3_machine_user.machine_user_group.name]
+}
+
+############################################################################################
+## The staff application
+## - Creates a Cognito user pool and client
+## - Creates a JWT secret required by the staff application
+## - Creates an ECS service and task for the Lowdefy application
+############################################################################################
+
+data "aws_ecr_repository" "staff_image_repository" {
+  name = "${local.project_name}-staff"
 }
 
 data "aws_ses_domain_identity" "verified_domain" {
@@ -215,15 +305,15 @@ module "staff" {
   container_secrets = [
     {
       name      = "LOWDEFY_SECRET_PG_CONNECTION_STRING",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.participant_database.admin_db_url_secret_name}",
+      valueFrom = module.participant_database.admin_db_url_secret_arn,
     },
     {
       name      = "LOWDEFY_SECRET_OPENID_CLIENT_ID",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.staff_idp.client_id_secret_name}",
+      valueFrom = module.staff_idp.client_id_secret_arn,
     },
     {
       name      = "LOWDEFY_SECRET_OPENID_CLIENT_SECRET",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.staff_idp.client_secret_secret_name}",
+      valueFrom = module.staff_idp.client_secret_secret_arn,
     },
     {
       name      = "LOWDEFY_SECRET_JWT_SECRET",
@@ -238,15 +328,26 @@ module "staff" {
 
   ]
   service_ssm_resource_paths = [
-    module.participant_database.admin_db_url_secret_name,
-    module.staff_idp.client_id_secret_name,
-    module.staff_idp.client_secret_secret_name,
-    aws_ssm_parameter.staff_jwt_secret.name,
+    module.participant_database.admin_db_url_secret_arn,
+    module.staff_idp.client_id_secret_arn,
+    module.staff_idp.client_secret_secret_arn,
+    aws_ssm_parameter.staff_jwt_secret.arn,
   ]
   depends_on = [
     module.participant_database,
     module.staff_idp,
   ]
+}
+
+############################################################################################
+## The analytics application
+## - Creates an RDS Aurora mysql database
+## - Creates an EFS for persistent container data
+## - Creates an ECS service and task for the Matomo application
+############################################################################################
+
+data "aws_ecr_repository" "analytics_image_repository" {
+  name = "${local.project_name}-analytics"
 }
 
 module "analytics_database" {
@@ -286,15 +387,15 @@ module "analytics" {
   container_secrets = [
     {
       name      = "MATOMO_DATABASE_HOST",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.analytics_database.admin_db_host_secret_name}"
+      valueFrom = module.analytics_database.admin_db_host_secret_arn,
     },
     {
       name      = "MATOMO_DATABASE_PASSWORD",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.analytics_database.admin_password_secret_name}"
+      valueFrom = module.analytics_database.admin_password_secret_arn,
     },
     {
       name      = "MATOMO_DATABASE_USERNAME",
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${module.analytics_database.admin_user_secret_name}"
+      valueFrom = module.analytics_database.admin_user_secret_arn,
     }
   ]
   container_env_vars = [
@@ -304,9 +405,9 @@ module "analytics" {
     }
   ]
   service_ssm_resource_paths = [
-    module.analytics_database.admin_db_host_secret_name,
-    module.analytics_database.admin_password_secret_name,
-    module.analytics_database.admin_user_secret_name,
+    module.analytics_database.admin_db_host_secret_arn,
+    module.analytics_database.admin_password_secret_arn,
+    module.analytics_database.admin_user_secret_arn,
   ]
   container_efs_volumes = {
     "html" : {
@@ -324,45 +425,9 @@ module "analytics" {
   ]
 }
 
-module "doc_upload" {
-  source            = "../../modules/s3-encrypted"
-  s3_bucket_name    = local.document_upload_s3_name
-  read_role_names   = [module.participant.task_role_name, module.staff.task_role_name]
-  write_role_names  = [module.participant.task_role_name]
-  delete_role_names = [module.participant.task_role_name]
-  admin_role_names  = [module.participant.task_role_name]
-}
-
-resource "aws_s3_bucket_cors_configuration" "doc_upload_cors" {
-  bucket = local.document_upload_s3_name
-
-  cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["PUT"]
-    allowed_origins = ["https://${var.participant_url}"]
-    expose_headers  = []
-    max_age_seconds = 3000
-  }
-}
-
-module "refresh_s3_presigned_urls" {
-  source                  = "../../modules/task-scheduled"
-  schedule_name           = local.refresh_s3_presigned_urls_schedule_name
-  cluster_name            = local.cluster_name
-  task_definition_family  = local.participant_service_name
-  container_task_override = "{\"containerOverrides\": [{\"name\": \"${local.participant_service_name}\", \"command\": [\"npm\", \"run\", \"refresh-s3-urls\"]}]}"
-  security_group_ids      = [module.participant.app_security_group.id]
-  subnet_ids              = data.aws_subnets.default.ids
-  schedule_expression     = "cron(0 * * * ? *)"
-  schedule_enabled        = true
-}
-
-module "side_load" {
-  source           = "../../modules/s3-encrypted"
-  s3_bucket_name   = local.side_load_s3_name
-  read_role_names  = [module.participant.task_role_name]
-  admin_role_names = [module.participant.task_role_name]
-}
+############################################################################################
+## DNS for the participant, staff, and analytics applications
+############################################################################################
 
 # todo: cleanup service names
 module "dns" {

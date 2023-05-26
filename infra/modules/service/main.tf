@@ -294,8 +294,9 @@ resource "aws_cloudwatch_log_group" "service_logs" {
 ####################
 
 module "alb_logging" {
-  source         = "../s3-encrypted"
-  s3_bucket_name = var.service_name
+  source            = "../s3-encrypted"
+  s3_bucket_name    = var.service_name
+  log_target_prefix = var.service_name
 }
 
 ####################
@@ -372,7 +373,7 @@ data "aws_iam_policy_document" "task_executor" {
       actions = [
         "ssm:GetParameters",
       ]
-      resources = ["arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${statement.value}"]
+      resources = [statement.value]
     }
   }
 }
