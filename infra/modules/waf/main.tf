@@ -1,4 +1,15 @@
+############################################################################################
+## A module for creating a WAFv2 Web ACL
+## - Configures a number of common AWS managed WAF rules
+## - Configures logging for the Web ACL
+############################################################################################
+
 data "aws_caller_identity" "current" {}
+
+############################################################################################
+## WAF Web ACL
+############################################################################################
+
 resource "aws_wafv2_web_acl" "waf" {
   name        = var.waf_name
   description = "Managed ruleset for WAF."
@@ -264,21 +275,23 @@ resource "aws_wafv2_web_acl" "waf" {
   }
 }
 
-# logging configuration resource
+############################################################################################
+## WAF logging
+############################################################################################
+
 resource "aws_wafv2_web_acl_logging_configuration" "waf_logging" {
   log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
   resource_arn            = aws_wafv2_web_acl.waf.arn
 }
 
 resource "aws_cloudwatch_log_group" "waf" {
-  name              = var.waf_logging_name # make this a variable
+  name              = var.waf_logging_name
   retention_in_days = 30
 
   # Checkov throws alerts in the event of default encryption for Cloudwatch,which is server-side encrytion for data at rest.
   # checkov:skip=CKV_AWS_158:Disabling this becuase if the key is deleted or otherwise unassociated, the cloudwatch logs will be inaccessible.
 }
 
-# s3 logging bucket; this is a refactor to DRY up the code
 module "s3_encrypted_bucket" {
   source            = "../s3-encrypted"
   s3_bucket_name    = "wic-prp-waf"
@@ -286,7 +299,7 @@ module "s3_encrypted_bucket" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "waf_logging" {
-  bucket                = module.s3_encrypted_bucket.encrypted_bucket.id
+  bucket                = module.s3_encrypted_bucket.encrypted_bucket_id
   expected_bucket_owner = data.aws_caller_identity.current.account_id
 
   rule {
