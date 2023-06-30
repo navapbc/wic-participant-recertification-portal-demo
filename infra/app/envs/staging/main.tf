@@ -56,13 +56,8 @@ module "app" {
   # Image tags
   participant_image_tag = var.participant_image_tag
   staff_image_tag       = var.staff_image_tag
-  analytics_image_tag   = var.analytics_image_tag
 
   # Urls
   participant_url = "${local.environment_name}.wic-services.org"
   staff_url       = "${local.environment_name}-staff.wic-services.org"
-  analytics_url   = "${local.environment_name}-analytics.wic-services.org"
-
-  # Misc settings
-  analytics_enable_exec = true
 }
