@@ -104,8 +104,14 @@ blocks:
               idChange: no
               addressChange: yes
           s3_documents:
-            - [febpaystubs.pdf, https://raw.githubusercontent.com/navapbc/wic-participant-recertification-portal-demo/main/participant/tests/fixtures/cfpb_building_block_activities_how-to-read-pay-stub_handout.pdf?raw=true]
-            - [marchpaystub.png, https://github.com/navapbc/wic-participant-recertification-portal-demo/blob/main/participant/tests/fixtures/cfpb_2014_0318_Prepaid_design_inline_1.png?raw=true]
+            - [
+                febpaystubs.pdf,
+                https://raw.githubusercontent.com/navapbc/wic-participant-recertification-portal-demo/main/participant/tests/fixtures/cfpb_building_block_activities_how-to-read-pay-stub_handout.pdf?raw=true,
+              ]
+            - [
+                marchpaystub.png,
+                https://github.com/navapbc/wic-participant-recertification-portal-demo/blob/main/participant/tests/fixtures/cfpb_2014_0318_Prepaid_design_inline_1.png?raw=true,
+              ]
         - agency_name: Gallatin
           updated_at: 1678554960000
           form_data:
@@ -157,7 +163,10 @@ blocks:
               idChange: no
               addressChange: yes
           s3_documents:
-            - [electric.pdf, https://github.com/navapbc/wic-participant-recertification-portal-demo/blob/main/participant/tests/fixtures/cfpb_your-money-your-goals_prioritizing-bills_tool.pdf?raw=true]
+            - [
+                electric.pdf,
+                https://github.com/navapbc/wic-participant-recertification-portal-demo/blob/main/participant/tests/fixtures/cfpb_your-money-your-goals_prioritizing-bills_tool.pdf?raw=true,
+              ]
       # `enableCellTextSelection` and `ensureDomOrder` allow the user to select text in the grid.
       # See https://ag-grid.com/react-data-grid/clipboard/#using-the-browsers-text-selection
       enableCellTextSelection: true

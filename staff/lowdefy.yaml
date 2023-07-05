@@ -21,7 +21,6 @@ types:
     url: https://blocks-cdn.lowdefy.com/v3.23.4/blocks-aggrid/meta/AgGridAlpine.json
 
 pages:
-
   - _ref:
       path: templates/page_template.yml
       vars:
