@@ -13,7 +13,6 @@
 version: "3.7"
 name: staff-e2e
 services:
-
   # Create a lowdefy server to run e2e tests against
   app-e2e:
     build:
