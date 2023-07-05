@@ -20,7 +20,6 @@ on:
         options:
           - participant
           - staff
-          - analytics
   # Designate this as a reusable workflow.
   # When used as a reusable workflow, this always deploys to the dev environment.
   # See https://docs.github.com/en/actions/using-workflows/reusing-workflows

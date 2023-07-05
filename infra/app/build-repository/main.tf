@@ -64,10 +64,3 @@ module "staff_image_repository" {
   push_access_role_arn = data.aws_iam_role.github_actions.arn
   app_account_ids      = var.app_environment_account_ids
 }
-
-module "analytics_image_repository" {
-  source               = "../../modules/container-image-repository"
-  name                 = "${local.project_name}-analytics"
-  push_access_role_arn = data.aws_iam_role.github_actions.arn
-  app_account_ids      = var.app_environment_account_ids
-}

@@ -14,6 +14,3 @@ output "staff_image_repository_url" {
   value = module.staff_image_repository.image_repository_url
 }
 
-output "analytics_image_repository_url" {
-  value = module.analytics_image_repository.image_repository_url
-}
