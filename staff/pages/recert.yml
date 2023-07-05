@@ -5,73 +5,14 @@
 id: recert_context
 type: Context
 
-requests: # Requests defines all the data requests made available in this page context
-  - id: get_data # Request ID
-    type: KnexRaw # The type of request. Lowdefy uses Knex to talk to Postgresql
-    connectionId: postgres # This is the ID of the connection. The connection itself is defined in `lowdefy.yml`
-    properties:
-      query: |
-        select jsonb_object_agg(coalesce(sf.form_route, 'Null'), sf.form_data) as form_data, s.updated_at, la.name as agency_name, d.s3_documents
-        from submissions s
-        left join submission_forms sf on (s.submission_id = sf.submission_id)
-        left join local_agencies la on (s.local_agency_id = la.local_agency_id)
-        left join (
-          select submission_id, jsonb_object_agg(original_filename, s3_url) as s3_documents
-          from documents
-          group by submission_id
-        ) d on (s.submission_id = d.submission_id)
-        left join staff_users su on (s.local_agency_id = su.local_agency_id)
-        where su.staff_user_id = :staff_user_id
-        and s.submitted = true
-        group by sf.submission_id, s.updated_at, la.name, d.s3_documents
-        order by s.updated_at desc;
-      parameters:
-        staff_user_id:
-          _user: sub
-  - id: get_local_agency
-    type: KnexRaw
-    connectionId: postgres
-    properties:
-      query: select la.name
-        from local_agencies la
-        left join staff_users su on (la.local_agency_id = su.local_agency_id)
-        where su.staff_user_id = :staff_user_id
-        limit 1;
-      parameters:
-        staff_user_id:
-          _user: sub
-
-events:
-  # A list of actions that gets completed each time this lowdefy context is loaded
-  onInitAsync:
-    - id: fetch_data
-      type: Request
-      # Execute the requests
-      params:
-        - get_data
-        - get_local_agency
-
 blocks:
-  # We prefer sizeColumnsToFit over autoSize, but leaving this in case we change our mind.
-  # - id: Autosize
-  #   type: Button
-  #   events:
-  #     onClick:
-  #       - id: autosize_table
-  #         type: CallMethod
-  #         params:
-  #           blockId: table
-  #           method: autoSize
-
   - id: agency_name
     type: Title
     properties:
       content:
         _nunjucks:
           template: |
-            Agency: {{ name }}
-          on:
-            _request: get_local_agency.rows.0
+            Agency: Gallatin
       level: 2
 
   - id: fit_to_size_button
@@ -98,7 +39,7 @@ blocks:
             blockId: table
             method: exportDataAsCsv
             args:
-              - fileName: wic-mt-recertification-export.csv
+              - fileName: demo-wic-mt-recertification-export.csv
 
   # The main table that shows the recertifications data
   - id: table
@@ -107,8 +48,116 @@ blocks:
 
     properties:
       rowData:
-        # Send all the data returned by the query `get_data`. KnexRaw requests need to call `rows`; KnexBuilder requests don't
-        _request: get_data.rows
+        # Hard code static demo data.
+        - agency_name: Gallatin
+          updated_at: 1678660320000
+          form_data:
+            name:
+              lastName: Cho
+              firstName: Abigail
+              preferredName: ""
+            contact:
+              phoneNumber: (406) 987 - 6543
+              additionalInfo: ""
+            details:
+              - lastName: Cho
+                firstName: Mandy
+                relationship: Child
+                dob:
+                  month: 04
+                  day: 02
+                  year: 2022
+                adjunctive: yes
+            changes:
+              idChange: no
+              addressChange: no
+        - agency_name: Gallatin
+          updated_at: 1678568520000
+          form_data:
+            name:
+              lastName: Schneider
+              firstName: Elizabeth
+              preferredName: Liz
+            contact:
+              phoneNumber: (406) 321 - 7654
+              additionalInfo: Seth is healthy and spirited! But I’m having issues with latching.
+            details:
+              - lastName: Schneider
+                firstName: Elizabeth
+                preferredName: Liz
+                relationship: Self
+                dob:
+                  month: 11
+                  day: 21
+                  year: 1990
+                adjunctive: no
+              - lastName: Schneider
+                firstName: Seth
+                preferredName: ""
+                relationship: Child
+                dob:
+                  month: 02
+                  day: 23
+                  year: 2023
+                adjunctive: no
+            changes:
+              idChange: no
+              addressChange: yes
+          s3_documents:
+            - [febpaystubs.pdf, https://raw.githubusercontent.com/navapbc/wic-participant-recertification-portal-demo/main/participant/tests/fixtures/cfpb_building_block_activities_how-to-read-pay-stub_handout.pdf?raw=true]
+            - [marchpaystub.png, https://github.com/navapbc/wic-participant-recertification-portal-demo/blob/main/participant/tests/fixtures/cfpb_2014_0318_Prepaid_design_inline_1.png?raw=true]
+        - agency_name: Gallatin
+          updated_at: 1678554960000
+          form_data:
+            name:
+              lastName: Brown
+              firstName: Nicholas
+              preferredName: Nick Brown
+            contact:
+              phoneNumber: (406) 123 - 4567
+              additionalInfo: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            details:
+              - lastName: Brown
+                firstName: Nicholas
+                preferredName: Nick Brown
+                relationship: Self
+                dob:
+                  month: 07
+                  day: 03
+                  year: 1993
+                adjunctive: yes
+              - lastName: Brown
+                firstName: Zoe
+                preferredName: ""
+                relationship: Child
+                dob:
+                  month: 03
+                  day: 03
+                  year: 2020
+                adjunctive: yes
+              - lastName: Brown
+                firstName: Mia
+                preferredName: ""
+                relationship: Child
+                dob:
+                  month: 03
+                  day: 03
+                  year: 2020
+                adjunctive: yes
+              - lastName: Brown
+                firstName: Mason
+                preferredName: ""
+                relationship: Child
+                dob:
+                  month: 10
+                  day: 14
+                  year: 2022
+                adjunctive: yes
+            changes:
+              idChange: no
+              addressChange: yes
+          s3_documents:
+            - [electric.pdf, https://github.com/navapbc/wic-participant-recertification-portal-demo/blob/main/participant/tests/fixtures/cfpb_your-money-your-goals_prioritizing-bills_tool.pdf?raw=true]
       # `enableCellTextSelection` and `ensureDomOrder` allow the user to select text in the grid.
       # See https://ag-grid.com/react-data-grid/clipboard/#using-the-browsers-text-selection
       enableCellTextSelection: true

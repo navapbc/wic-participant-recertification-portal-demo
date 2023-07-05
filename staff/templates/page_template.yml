@@ -24,22 +24,6 @@ blocks:
         style:
           maxWidth: 100
     areas:
-      # In the header region:
-      header:
-        blocks:
-          - id: logout
-            type: Button
-            properties:
-              title: Logout
-            visible:
-              _ne:
-                - _user: sub
-                - null
-            events:
-              onClick:
-                - id: logout
-                  type: Logout
-
       # In the content region:
       content:
         blocks:
@@ -49,7 +33,7 @@ blocks:
               - id: site_title
                 type: Title
                 properties:
-                  content: WIC Montana Staff Portal
+                  content: WIC Demonstration Staff Portal
           - id: content_second
             type: Context
             blocks:
