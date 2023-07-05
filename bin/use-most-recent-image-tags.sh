@@ -41,7 +41,6 @@ function main() {
   rm -f -- image_tags.tfvars
   getImageTag "participant"
   getImageTag "staff"
-  getImageTag "analytics"
   echo "...Done!"
 }
 

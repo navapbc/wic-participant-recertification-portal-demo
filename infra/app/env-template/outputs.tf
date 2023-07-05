@@ -9,7 +9,3 @@ output "participant_service_name" {
 output "staff_service_name" {
   value = local.staff_service_name
 }
-
-output "analytics_service_name" {
-  value = local.analytics_service_name
-}

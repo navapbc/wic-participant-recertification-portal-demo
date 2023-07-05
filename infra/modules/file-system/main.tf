@@ -42,6 +42,7 @@ resource "aws_efs_file_system" "fs" {
 }
 
 resource "aws_efs_access_point" "fs" {
+  # checkov:skip=CKV_AWS_329: Checkov wants to avoid "/" as the root directory
   file_system_id = aws_efs_file_system.fs.id
   posix_user {
     uid = var.access_point_posix_uid

@@ -82,24 +82,3 @@ variable "staff_enable_exec" {
   description = "Enables ECS exec for the staff service"
   default     = false
 }
-
-
-##############################################
-## Variables for the analytics app
-##############################################
-variable "analytics_image_tag" {
-  type        = string
-  description = "Image tag to deploy to the environment for the analytics service"
-  default     = "latest"
-}
-
-variable "analytics_url" {
-  type        = string
-  description = "URL to access the application"
-}
-
-variable "analytics_enable_exec" {
-  type        = bool
-  description = "Enables ECS exec for the analytics service"
-  default     = false
-}
