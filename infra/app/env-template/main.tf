@@ -306,6 +306,7 @@ module "staff_secret" {
 }
 
 resource "aws_ssm_parameter" "staff_jwt_secret" {
+  # checkov:skip=CKV_AWS_337:Skip creating separate IAM roles for KMS keys
   name  = "/metadata/staff/${var.environment_name}-jwt-secret"
   type  = "SecureString"
   value = base64encode(module.staff_secret.random_password)
