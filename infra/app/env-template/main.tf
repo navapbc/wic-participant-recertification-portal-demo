@@ -24,8 +24,6 @@ locals {
   participant_service_name                = "${local.project_name}-participant-${var.environment_name}"
   staff_cognito_user_pool_name            = "${local.project_name}-staff-${var.environment_name}"
   staff_service_name                      = "${local.project_name}-staff-${var.environment_name}"
-  analytics_service_name                  = "${local.project_name}-analytics-${var.environment_name}"
-  analytics_database_name                 = "${local.project_name}-analytics-${var.environment_name}"
   document_upload_s3_name                 = "${local.project_name}-doc-upload-${var.environment_name}"
   refresh_s3_presigned_urls_schedule_name = "${local.project_name}-s3-refresh-schedule-${var.environment_name}"
   side_load_s3_name                       = "${local.project_name}-side-load-${var.environment_name}"
@@ -218,14 +216,6 @@ module "participant" {
       value = false,
     },
     {
-      name  = "MATOMO_URL_BASE",
-      value = var.analytics_url,
-    },
-    {
-      name  = "MATOMO_SECURE",
-      value = true,
-    },
-    {
       name  = "LOG_LEVEL",
       value = var.participant_log_level,
     }
@@ -316,6 +306,7 @@ module "staff_secret" {
 }
 
 resource "aws_ssm_parameter" "staff_jwt_secret" {
+  # checkov:skip=CKV_AWS_337:Skip creating separate IAM roles for KMS keys
   name  = "/metadata/staff/${var.environment_name}-jwt-secret"
   type  = "SecureString"
   value = base64encode(module.staff_secret.random_password)
@@ -377,103 +368,5 @@ module "staff" {
   depends_on = [
     module.participant_database,
     module.staff_idp,
-  ]
-}
-
-############################################################################################
-## The analytics application
-## - Creates an RDS Aurora mysql database
-## - Creates an A record for the application
-## - Creates an EFS for persistent container data
-## - Creates an ECS service and task for the Matomo application
-############################################################################################
-
-data "aws_ecr_repository" "analytics_image_repository" {
-  name = "${local.project_name}-analytics"
-}
-
-module "analytics_database" {
-  source        = "../../modules/database"
-  database_name = local.analytics_database_name
-  database_port = 3306
-  database_type = "mysql"
-  vpc_id        = data.aws_vpc.default.id
-  cidr_blocks   = [data.aws_vpc.default.cidr_block]
-}
-
-module "analytics_dns" {
-  source               = "../../modules/dns-alias"
-  hosted_zone_domain   = local.hosted_zone_domain
-  application_alb_name = local.analytics_service_name
-  alias_url            = var.analytics_url
-}
-
-module "analytics_file_system" {
-  source                 = "../../modules/file-system"
-  resource_name          = "${local.analytics_service_name}-fs"
-  vpc_id                 = data.aws_vpc.default.id
-  subnet_ids             = data.aws_subnets.default.ids
-  cidr_blocks            = [data.aws_vpc.default.cidr_block]
-  access_point_posix_uid = 33
-  access_point_posix_gid = 33
-  access_point_root_dir  = "/fargate"
-}
-
-module "analytics" {
-  source                   = "../../modules/service"
-  service_name             = local.analytics_service_name
-  image_repository_url     = data.aws_ecr_repository.analytics_image_repository.repository_url
-  waf_name                 = local.waf_name
-  s3_logging_bucket_id     = module.s3_logging_bucket.bucket_id
-  image_repository_arn     = data.aws_ecr_repository.analytics_image_repository.arn
-  image_tag                = var.analytics_image_tag
-  vpc_id                   = data.aws_vpc.default.id
-  subnet_ids               = data.aws_subnets.default.ids
-  ssl_cert_arn             = data.aws_acm_certificate.ssl_cert.arn
-  service_cluster_arn      = module.service_cluster.service_cluster_arn
-  memory                   = 2048
-  container_port           = 8080
-  container_read_only      = false # Matomo/apache needs to be able to write to the rootfs
-  healthcheck_path         = "/matomo.php"
-  healthcheck_start_period = 300 # Matomo needs a really long startup time grace period
-  enable_exec              = var.analytics_enable_exec
-  container_secrets = [
-    {
-      name      = "MATOMO_DATABASE_HOST",
-      valueFrom = module.analytics_database.admin_db_host_secret_arn,
-    },
-    {
-      name      = "MATOMO_DATABASE_PASSWORD",
-      valueFrom = module.analytics_database.admin_password_secret_arn,
-    },
-    {
-      name      = "MATOMO_DATABASE_USERNAME",
-      valueFrom = module.analytics_database.admin_user_secret_arn,
-    }
-  ]
-  container_env_vars = [
-    {
-      name  = "MATOMO_DATABASE_DBNAME",
-      value = local.analytics_database_name,
-    }
-  ]
-  ssm_resource_paths = [
-    module.analytics_database.admin_db_host_secret_arn,
-    module.analytics_database.admin_password_secret_arn,
-    module.analytics_database.admin_user_secret_arn,
-  ]
-  container_efs_volumes = {
-    "html" : {
-      volume_name      = "${local.analytics_service_name}-html",
-      container_path   = "/var/www/html",
-      file_system_id   = module.analytics_file_system.file_system_id,
-      file_system_arn  = module.analytics_file_system.file_system_arn,
-      access_point_id  = module.analytics_file_system.access_point_id,
-      access_point_arn = module.analytics_file_system.access_point_arn,
-    }
-  }
-  depends_on = [
-    module.analytics_database,
-    module.analytics_file_system,
   ]
 }

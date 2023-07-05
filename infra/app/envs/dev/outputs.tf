@@ -17,7 +17,3 @@ output "participant_service_name" {
 output "staff_service_name" {
   value = module.app.staff_service_name
 }
-
-output "analytics_service_name" {
-  value = module.app.analytics_service_name
-}

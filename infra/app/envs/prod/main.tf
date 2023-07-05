@@ -58,10 +58,8 @@ module "app" {
   # Image tags
   participant_image_tag = var.participant_image_tag
   staff_image_tag       = var.staff_image_tag
-  analytics_image_tag   = var.analytics_image_tag
 
   # Urls
   participant_url = "wic-services.org"
   staff_url       = "staff.wic-services.org"
-  analytics_url   = "analytics.wic-services.org"
 }
