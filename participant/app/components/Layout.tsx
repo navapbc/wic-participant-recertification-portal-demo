@@ -16,6 +16,7 @@ const Layout = ({
   missingData,
 }: LayoutProps): ReactElement => {
   return (
+    // activate demomode flag
     <div className="container">
       {demoMode === "true" ? (
         <Alert type="warning" headingLevel="h6" slim={true} role="status">
