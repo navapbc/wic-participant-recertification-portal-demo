@@ -13,52 +13,12 @@
 version: "3.7"
 name: staff-e2e
 services:
-  # Create a database to run e2e tests against
-  database:
-    image: postgres:14
-    environment:
-      POSTGRES_PASSWORD: incredible_local_secret_phrase
-      POSTGRES_USER: postgres
-    # Check that the database is up and running
-    healthcheck:
-      test: "pg_isready --username=postgres"
-      timeout: 10s
-      retries: 20
-    networks:
-      - staff-e2e
-
-  # Include a remix container to set the db schema and seed the db.
-  # Run the following to re-seed:
-  # `docker compose run --rm remix`
-  dbreset-e2e:
-    build:
-      target: dev
-      context: ../participant
-    command: ["npm", "run", "dev:dbreset"]
-    depends_on:
-      database:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql://postgres:incredible_local_secret_phrase@database:5432/postgres?schema=public
-    init: true
-    networks:
-      - staff-e2e
 
   # Create a lowdefy server to run e2e tests against
   app-e2e:
     build:
       target: dev
       context: .
-    # The database must be up and running before the lowdefy server will start
-    depends_on:
-      database:
-        condition: service_healthy
-      s3-local:
-        condition: service_started
-      createbuckets:
-        condition: service_completed_successfully
-    environment:
-      LOWDEFY_SECRET_PG_CONNECTION_STRING: postgresql://postgres:incredible_local_secret_phrase@database:5432/postgres?schema=public
     # Check that the lowdefy server is up and running
     healthcheck:
       test: "wget --no-verbose --tries=1 --spider http://localhost:3000/recertifications || exit 1"
@@ -71,30 +31,6 @@ services:
     # Expose a port in case it's useful for debugging
     ports:
       - 3123:3000
-
-  # Create an S3 Localstack server for e2e tests
-  s3-local:
-    image: minio/minio
-    ports:
-      - "9095:9000"
-      - "9096:9001"
-    volumes:
-      - minio_storage_staff:/data
-    environment:
-      MINIO_ROOT_USER: e2e_minio
-      MINIO_ROOT_PASSWORD: incredible_local_secret_phrase
-    command: server --console-address ":9001" /data
-    networks:
-      - staff-e2e
-
-  createbuckets:
-    image: minio/mc
-    depends_on:
-      - s3-local
-    entrypoint: >
-      /bin/sh -c "/usr/bin/mc config host add myminio http://s3-local:9000 e2e_minio incredible_local_secret_phrase; /usr/bin/mc mb myminio/participant-uploads; exit 0; "
-    networks:
-      - staff-e2e
 
   # Create the playwright container
   playwright:
@@ -119,6 +55,3 @@ services:
 
 networks:
   staff-e2e:
-
-volumes:
-  minio_storage_staff:
