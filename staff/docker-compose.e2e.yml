@@ -1,6 +1,6 @@
 # Usage:
 # This docker composition is meant to be invoked using the npm scripts in package.json.
-# Run `npm run e2e` to create the database, then lowdefy, then run the playwright tests.
+# Run `npm run e2e` to run lowdefy, then run the playwright tests.
 # Run `npm run e2e:cleanup` to clean up running and exited containers.
 # Run `npm run e2e:update` to update the playwright linux snapshots.
 #
