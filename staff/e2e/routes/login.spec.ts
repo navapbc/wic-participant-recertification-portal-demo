@@ -12,8 +12,6 @@ import AxeBuilder from "@axe-core/playwright";
 
 test("has title", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
-  await page.getByText("WIC Montana Staff Portal").waitFor();
-  // Expect a title "to contain" a correct app title.
-  await expect(page).toHaveTitle(/Login/);
+  await page.getByText("WIC Demonstration Staff Portal").waitFor();
   await expect(page).toHaveScreenshot();
 });

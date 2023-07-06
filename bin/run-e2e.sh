@@ -70,10 +70,9 @@ function main() {
   if [[ "cleanup" == $command ]]; then
     cleanup
   else
-    run_db
-    create_buckets
-    if [[ "staff" == $app ]]; then
-      reset_db
+    if [[ "participant" == $app ]]; then
+      run_db
+      create_buckets
     fi
     run_app
     if [[ "test" == $command ]]; then
