@@ -41,6 +41,21 @@ resource "aws_s3_bucket" "s3_encrypted" {
   # checkov:skip=CKV2_AWS_62:Disable SNS requirement
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "s3_encrypted" {
+  bucket = aws_s3_bucket.s3_encrypted.bucket
+  rule {
+    id = "ExpireDocuments"
+    expiration {
+      # all objects in the bucket will expire after a day with a DELETE marker becoming the new "current" version of the object.
+      days = 1
+    }
+    noncurrent_version_expiration {
+      # All objects will will be deleted after an additional day.
+      days = 1
+    }
+  }
+}
+
 resource "aws_s3_bucket_logging" "s3_encrypted" {
   bucket        = aws_s3_bucket.s3_encrypted.id
   target_bucket = var.s3_logging_bucket_id
