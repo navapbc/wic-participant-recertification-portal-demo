@@ -54,7 +54,9 @@
       "intro": "We’d like to hear more about your experience using this site. Please take a few minutes to share your feedback.",
       "survey": {
         "text": "<0>Take the 3 question survey</0>",
-        "link": ["https://forms.gle/FBKaK3vjbHJwmzyA8"]
+        "link": [
+          "https://forms.gle/FBKaK3vjbHJwmzyA8"
+        ]
       }
     }
   },
@@ -83,7 +85,10 @@
     "previouslySubmittedAlert": "You can't edit this page. If you need to update the number of people who will recertify, click Continue and use the \"Add another WIC participant\" or \"Remove participant\" buttons."
   },
   "Demo": {
-    "alertText": "This site is a demonstration project and for example purposes only"
+    "links": [
+      "https://signupwic.com/"
+    ],
+    "alertText": "This site is a demonstration project and for example purposes only. If you'd like to apply for WIC, please visit <0>SignUpWIC.com</0> ."
   },
   "Details": {
     "participantCard": {
@@ -108,7 +113,9 @@
     "eligible": "You can fill out this form if:",
     "feedback": {
       "heading": "Already attended your recertification appointment?",
-      "links": ["https://forms.gle/hYeQhm6ZjaWE7gQFA"],
+      "links": [
+        "https://forms.gle/hYeQhm6ZjaWE7gQFA"
+      ],
       "text": "We’d love to hear feedback about your experience. Please respond to <0>this 3 question survey</0> ."
     },
     "intro": "You can now prepare for your recertification appointment with your local Montana WIC clinic.",
@@ -124,11 +131,15 @@
   },
   "Layout": {
     "feedback": {
-      "links": ["https://forms.gle/FBKaK3vjbHJwmzyA8"],
+      "links": [
+        "https://forms.gle/FBKaK3vjbHJwmzyA8"
+      ],
       "text": "We want to hear from you! <0>Give feedback or ask questions about this site</0> ."
     },
     "footer1": {
-      "links": ["https://dphhs.mt.gov/ecfsd/wic/index"],
+      "links": [
+        "https://dphhs.mt.gov/ecfsd/wic/index"
+      ],
       "text": "This site is built in partnership with <0>Montana WIC</0> ."
     },
     "footer2": {
@@ -266,7 +277,10 @@
       "title": "Tips for uploading images or PDFs",
       "accepts": {
         "title": "This website only accepts:",
-        "items": ["PDF documents", "Images (.jpg, .jpeg, .png, .tiff, .heic)"]
+        "items": [
+          "PDF documents",
+          "Images (.jpg, .jpeg, .png, .tiff, .heic)"
+        ]
       },
       "format": {
         "title": "If your file is not in one of these formats, try one of the following:",

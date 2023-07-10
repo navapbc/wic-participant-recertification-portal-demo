@@ -16,11 +16,10 @@ const Layout = ({
   missingData,
 }: LayoutProps): ReactElement => {
   return (
-    // activate demomode flag
     <div className="container">
       {demoMode === "true" ? (
         <Alert type="warning" headingLevel="h6" slim={true} role="status">
-          <Trans i18nKey={"Demo.alertText"} />
+          <TransLinks i18nTextKey="Demo.alertText" i18nLinkKey="Demo.links" />
         </Alert>
       ) : (
         ""

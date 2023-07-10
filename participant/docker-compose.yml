@@ -34,8 +34,8 @@ services:
       AWS_SECRET_ACCESS_KEY: "incredible_local_secret_phrase"
       MAX_UPLOAD_FILECOUNT: 5
       MAX_UPLOAD_SIZE_BYTES: 5242880
-      MATOMO_URL_BASE: "localhost:8080"
       LOG_LEVEL: debug
+      PUBLIC_DEMO_MODE: true
     init: true
     ports:
       - "3003:3000"
@@ -59,8 +59,8 @@ services:
       S3_ENDPOINT_URL: http://s3-local:9000
       AWS_ACCESS_KEY_ID: "e2e_minio"
       AWS_SECRET_ACCESS_KEY: "incredible_local_secret_phrase"
-      MATOMO_URL_BASE: "localhost:8080"
       LOG_LEVEL: warn
+      PUBLIC_DEMO_MODE: true
     init: true
     ports:
       - "3010:3000"
