@@ -213,7 +213,7 @@ module "participant" {
     },
     {
       name  = "PUBLIC_DEMO_MODE",
-      value = false,
+      value = true,
     },
     {
       name  = "LOG_LEVEL",
