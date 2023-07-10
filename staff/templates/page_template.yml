@@ -24,32 +24,21 @@ blocks:
         style:
           maxWidth: 100
     areas:
-      # In the header region:
-      header:
-        blocks:
-          - id: logout
-            type: Button
-            properties:
-              title: Logout
-            visible:
-              _ne:
-                - _user: sub
-                - null
-            events:
-              onClick:
-                - id: logout
-                  type: Logout
-
       # In the content region:
       content:
         blocks:
           - id: content_first
             type: Context
             blocks:
+              - id: demo_banner
+                type: Alert
+                properties:
+                  message: This site is a demonstration project and for example purposes only. It only displays demonstration content. Please see <a href="https://github.com/navapbc/wic-participant-recertification-portal-demo">the Github repo</a> for more info.
+                  type: warning
               - id: site_title
                 type: Title
                 properties:
-                  content: WIC Montana Staff Portal
+                  content: WIC Demonstration Staff Portal
           - id: content_second
             type: Context
             blocks:

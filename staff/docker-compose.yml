@@ -1,53 +1,10 @@
 version: "3.7"
 
 services:
-  postgres:
-    image: postgres:14
-    environment:
-      POSTGRES_PASSWORD: incredible_local_secret_phrase
-      POSTGRES_USER: postgres
-    healthcheck:
-      test: "pg_isready --username=postgres"
-      timeout: 10s
-      retries: 20
-    init: true
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  # Create an S3 Localstack server for e2e tests
-  s3-local:
-    image: minio/minio
-    ports:
-      - "9100:9000"
-      - "9101:9001"
-    volumes:
-      - minio_storage_staff:/data
-    environment:
-      MINIO_ROOT_USER: e2e_minio
-      MINIO_ROOT_PASSWORD: incredible_local_secret_phrase
-    command: server --console-address ":9001" /data
-
-  createbuckets:
-    image: minio/mc
-    depends_on:
-      - s3-local
-    entrypoint: >
-      /bin/sh -c "/usr/bin/mc config host add myminio http://s3-local:9000 e2e_minio incredible_local_secret_phrase; /usr/bin/mc mb myminio/participant-data; exit 0; "
-
   lowdefy_dev:
     build:
       target: dev
       context: .
-    depends_on:
-      postgres:
-        condition: service_healthy
-    # @TODO Create a local test OpenID Connect provider that you can spin up and test against
-    # Right now, local testing relies on setting up a `.env` file that has actual credentials
-    # to a test Cognito instance.
-    env_file:
-      - .env
-    environment:
-      LOWDEFY_SECRET_PG_CONNECTION_STRING: postgresql://postgres:incredible_local_secret_phrase@postgres:5432/postgres?schema=public
     init: true
     ports:
       - "3033:3000"
@@ -57,35 +14,10 @@ services:
       # Use a named volume for the node_modules so that the container uses the guest machine's node_modules dir instead of the host machine's node_modules directory, which might be divergent.
       - lowdefy_dev_nodemodules:/home/node/lowdefy/node_modules
 
-  # Include a remix container to set the db schema and seed the db.
-  # Run the following to re-seed:
-  # `docker compose run --rm remix`
-  remix:
-    build:
-      target: dev
-      context: ../participant
-    command: ["npm", "run", "dev:dbreset"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql://postgres:incredible_local_secret_phrase@postgres:5432/postgres?schema=public
-      S3_ENDPOINT_URL: http://s3-local:9000
-      AWS_ACCESS_KEY_ID: "e2e_minio"
-      AWS_SECRET_ACCESS_KEY: "incredible_local_secret_phrase"
-    init: true
-    ports:
-      - "3053:3000"
-
   lowdefy_prod:
     build:
       target: prod
       context: .
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      LOWDEFY_SECRET_PG_CONNECTION_STRING: postgresql://postgres:incredible_local_secret_phrase@postgres:5432/postgres?schema=public
     healthcheck:
       test: "wget --no-verbose --tries=1 --spider http://localhost:3000/recertifications || exit 1"
       interval: 30s
@@ -98,5 +30,3 @@ services:
 
 volumes:
   lowdefy_dev_nodemodules:
-  postgres_data:
-  minio_storage_staff:
