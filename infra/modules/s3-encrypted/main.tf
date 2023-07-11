@@ -44,14 +44,27 @@ resource "aws_s3_bucket" "s3_encrypted" {
 resource "aws_s3_bucket_lifecycle_configuration" "s3_encrypted" {
   bucket = aws_s3_bucket.s3_encrypted.bucket
   rule {
-    id = "ExpireDocuments"
+    id     = "ExpireDocuments"
+    status = "Enabled"
+
+    # checkov checks for this feature to prevent users from paying for resources they may not use
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
     expiration {
       # all objects in the bucket will expire after a day with a DELETE marker becoming the new "current" version of the object.
       days = 1
     }
+  }
+  rule {
+    id     = "DeleteNonCurrentVer"
+    status = "Enabled"
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
     noncurrent_version_expiration {
       # All objects will will be deleted after an additional day.
-      days = 1
+      noncurrent_days = 1
     }
   }
 }

@@ -99,8 +99,7 @@ export const handle = {
 
 export default function App() {
   // Get the locale from the loader
-  const { locale, demoMode, missingData } =
-    useLoaderData<LoaderData>();
+  const { locale, demoMode, missingData } = useLoaderData<LoaderData>();
   const { i18n } = useTranslation();
 
   // This hook will change the i18n instance language to the current locale
