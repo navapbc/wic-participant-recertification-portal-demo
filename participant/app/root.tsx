@@ -17,8 +17,6 @@ import i18next from "~/i18next.server";
 import Layout from "app/components/Layout";
 import { camelCase, upperFirst } from "lodash";
 import { useEffect } from "react";
-import MatomoTracker from "@jonkoops/matomo-tracker";
-import { useHydrated } from "remix-utils";
 import logger from "app/utils/logging.server";
 
 export function useChangeLanguage(locale: string) {
