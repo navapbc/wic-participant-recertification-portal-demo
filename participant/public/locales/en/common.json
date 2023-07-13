@@ -83,7 +83,10 @@
     "previouslySubmittedAlert": "You can't edit this page. If you need to update the number of people who will recertify, click Continue and use the \"Add another WIC participant\" or \"Remove participant\" buttons."
   },
   "Demo": {
-    "links": ["https://signupwic.com", "https://wic-recertification-staff.demo.navapbc.com"],
+    "links": [
+      "https://signupwic.com",
+      "https://wic-recertification-staff.demo.navapbc.com"
+    ],
     "alertText": "This site is a demonstration project and for example purposes only. To view the staff portal, please visit this <1>accompanying example site</1> . If you'd like to apply for WIC, please visit <0>SignUpWIC.com</0> ."
   },
   "Details": {
