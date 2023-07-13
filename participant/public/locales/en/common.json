@@ -48,13 +48,13 @@
     "intro": "During your appointment, your local WIC clinic staff will confirm the information you sent.",
     "startOverText": "Start over",
     "submitted": "Form submitted at: ",
-    "previouslySubmittedAlert": "You cannot review information after it’s submitted. If you need to make changes or add additional information, you must go through this form again. ",
+    "previouslySubmittedAlert": "You cannot review information after it’s submitted. If you need to make changes or add additional information, you must go through this form again.",
     "feedback": {
       "heading": "Help us improve this experience",
       "intro": "We’d like to hear more about your experience using this site. Please take a few minutes to share your feedback.",
       "survey": {
         "text": "<0>Take the 3 question survey</0>",
-        "link": ["https://forms.gle/FBKaK3vjbHJwmzyA8"]
+        "link": [""]
       }
     }
   },
@@ -83,8 +83,8 @@
     "previouslySubmittedAlert": "You can't edit this page. If you need to update the number of people who will recertify, click Continue and use the \"Add another WIC participant\" or \"Remove participant\" buttons."
   },
   "Demo": {
-    "links": ["https://signupwic.com/"],
-    "alertText": "This site is a demonstration project and for example purposes only. If you'd like to apply for WIC, please visit <0>SignUpWIC.com</0> ."
+    "links": ["https://signupwic.com", "https://wic-recertification-staff.demo.navapbc.com"],
+    "alertText": "This site is a demonstration project and for example purposes only. To view the staff portal, please visit this <1>accompanying example site</1> . If you'd like to apply for WIC, please visit <0>SignUpWIC.com</0> ."
   },
   "Details": {
     "participantCard": {
@@ -109,7 +109,7 @@
     "eligible": "You can fill out this form if:",
     "feedback": {
       "heading": "Already attended your recertification appointment?",
-      "links": ["https://forms.gle/hYeQhm6ZjaWE7gQFA"],
+      "links": [""],
       "text": "We’d love to hear feedback about your experience. Please respond to <0>this 3 question survey</0> ."
     },
     "intro": "You can now prepare for your recertification appointment with your local Montana WIC clinic.",
@@ -125,7 +125,7 @@
   },
   "Layout": {
     "feedback": {
-      "links": ["https://forms.gle/FBKaK3vjbHJwmzyA8"],
+      "links": [""],
       "text": "We want to hear from you! <0>Give feedback or ask questions about this site</0> ."
     },
     "footer1": {
