@@ -3,15 +3,6 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
-      env_name:
-        description: "The environment to deploy to"
-        required: true
-        default: "dev"
-        type: choice
-        options:
-          - dev
-          - staging
-          - prod
       app_name:
         description: "The app to deploy"
         required: true
@@ -30,13 +21,13 @@ on:
         type: string
 
 env:
-  ENV_NAME: ${{ inputs.env_name || 'dev' }}
+  ENV_NAME: 'prod'
   APP_NAME: ${{ inputs.app_name || 'participant' }}
   PROJECT_NAME: 'wic-prp'
   IMAGE_TAG: ${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}
 
 # env vars and inputs aren't evaluated here, so we need to use this toJson
-concurrency: cd-${{ toJson(github.event.inputs.env_name) || 'dev' }}-${{ toJson(github.event.inputs.app_name) || 'participant' }}
+concurrency: cd-${{ toJson(env.ENV_NAME) }}-${{ toJson(github.event.inputs.app_name) || 'participant' }}
 
 jobs:
   deploy:

@@ -17,9 +17,6 @@ import i18next from "~/i18next.server";
 import Layout from "app/components/Layout";
 import { camelCase, upperFirst } from "lodash";
 import { useEffect } from "react";
-import MatomoTracker from "@jonkoops/matomo-tracker";
-import { useHydrated } from "remix-utils";
-import { MATOMO_SECURE, MATOMO_URL_BASE } from "app/utils/config.server";
 import logger from "app/utils/logging.server";
 
 export function useChangeLanguage(locale: string) {
@@ -63,8 +60,6 @@ type LoaderData = {
   locale: string;
   demoMode: string;
   missingData: string;
-  MATOMO_SECURE: boolean;
-  MATOMO_URL_BASE: string;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -91,8 +86,6 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     locale,
     demoMode,
     missingData,
-    MATOMO_SECURE,
-    MATOMO_URL_BASE,
   });
 };
 
@@ -106,8 +99,7 @@ export const handle = {
 
 export default function App() {
   // Get the locale from the loader
-  const { locale, demoMode, missingData, MATOMO_SECURE, MATOMO_URL_BASE } =
-    useLoaderData<LoaderData>();
+  const { locale, demoMode, missingData } = useLoaderData<LoaderData>();
   const { i18n } = useTranslation();
 
   // This hook will change the i18n instance language to the current locale
@@ -115,33 +107,6 @@ export default function App() {
   // language, this locale will change and i18next will load the correct
   // translation files
   useChangeLanguage(locale);
-
-  const isHydrated = useHydrated();
-  if (isHydrated && MATOMO_URL_BASE) {
-    const tracker = new MatomoTracker({
-      urlBase: `//${MATOMO_URL_BASE}`,
-      siteId: 1,
-      disabled: false, // optional, false by default. Makes all tracking calls no-ops if set to true.
-      heartBeat: {
-        // optional, enabled by default
-        active: true, // optional, default value: true
-        seconds: 10, // optional, default value: `15
-      },
-      linkTracking: false, // optional, default value: true
-      configurations: {
-        // optional, default value: {}
-        // any valid matomo configuration, all below are optional
-        disableCookies: true,
-        setSecureCookie: MATOMO_SECURE,
-        setRequestMethod: "POST",
-        trackPageView: true,
-        setVisitorCookieTimeout: 1800,
-        setReferralCookieTimeout: 1800,
-      },
-    });
-
-    tracker.trackPageView();
-  }
 
   return (
     <html lang={locale} dir={i18n.dir()}>
@@ -156,13 +121,6 @@ export default function App() {
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
-        <noscript>
-          <img
-            referrerPolicy="no-referrer-when-downgrade"
-            src={`//${MATOMO_URL_BASE}/matomo.php?idsite=1&rec=1`}
-            alt=""
-          />
-        </noscript>
       </body>
     </html>
   );
