@@ -301,7 +301,7 @@ resource "aws_iam_group_policy_attachment" "change_own_password" {
 
 # Create a policy to allow users in the prp-demo-eng group to manage MFA
 resource "aws_iam_policy" "manage_mfa" {
-  name        = "manage-mfa"
+  name        = "manage-mfa-demo"
   description = "A policy to manage and enforce MFA"
   policy      = data.aws_iam_policy_document.manage_mfa.json
 }

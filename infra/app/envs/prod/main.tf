@@ -60,6 +60,6 @@ module "app" {
   staff_image_tag       = var.staff_image_tag
 
   # Urls
-  participant_url = "wic-services.org"
-  staff_url       = "staff.wic-services.org"
+  participant_url = "wic-recertification.demo.navapbc.com"
+  staff_url       = "wic-recertification-staff.demo.navapbc.com"
 }
