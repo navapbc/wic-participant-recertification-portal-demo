@@ -32,12 +32,12 @@ EMAIL_FILENAME=$2
 
 # Variables.
 UUID_FILENAME="staff-uuids-to-agencies.json"
-USER_POOL_NAME="wic-prp-staff-${ENV_NAME}"
-CLUSTER_NAME="wic-prp-app-${ENV_NAME}"
-TASK_DEFINITION_NAME="wic-prp-participant-${ENV_NAME}"
-CONTAINER_NAME="wic-prp-participant-${ENV_NAME}"
-SERVICE_NAME="wic-prp-participant-${ENV_NAME}"
-BUCKET_NAME="wic-prp-side-load-${ENV_NAME}"
+USER_POOL_NAME="prp-demo-staff-${ENV_NAME}"
+CLUSTER_NAME="prp-demo-app-${ENV_NAME}"
+TASK_DEFINITION_NAME="prp-demo-participant-${ENV_NAME}"
+CONTAINER_NAME="prp-demo-participant-${ENV_NAME}"
+SERVICE_NAME="prp-demo-participant-${ENV_NAME}"
+BUCKET_NAME="prp-demo-side-load-${ENV_NAME}"
 
 
 # # Create staff users in cognito.
