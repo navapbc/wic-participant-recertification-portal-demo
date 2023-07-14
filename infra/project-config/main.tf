@@ -1,6 +1,6 @@
 locals {
   # Machine readable project name (lower case letters, dashes, and underscores)
-  project_name = "wic-prp"
+  project_name = "prp-demo"
 
   # Project owner
   owner = "navapbc"
