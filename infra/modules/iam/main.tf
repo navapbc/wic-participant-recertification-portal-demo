@@ -7,12 +7,12 @@ data "aws_region" "current" {}
 
 # Create a user group for engineers managing environments
 resource "aws_iam_group" "wic_prp_eng" {
-  name = "wic-prp-eng"
+  name = "prp-demo-eng"
 }
 
 # Create a policy with all the permissions necessary to create and destroy a WIC PPR environment
 resource "aws_iam_policy" "manage_wic_prp_env" {
-  name        = "manage-wic-prp-env"
+  name        = "manage-prp-demo-env"
   description = "A policy that supports all permissions necessary to create and destroy a WIC PRP environment"
   policy      = data.aws_iam_policy_document.manage_wic_prp_env.json
 }
@@ -293,20 +293,20 @@ data "aws_iam_policy_document" "manage_wic_prp_env" {
   }
 }
 
-# Attach the managed AWS IAMUserChangePassword policy to the wic-prp-eng group
+# Attach the managed AWS IAMUserChangePassword policy to the prp-demo-eng group
 resource "aws_iam_group_policy_attachment" "change_own_password" {
   group      = aws_iam_group.wic_prp_eng.name
   policy_arn = "arn:aws:iam::aws:policy/IAMUserChangePassword"
 }
 
-# Create a policy to allow users in the wic-prp-eng group to manage MFA
+# Create a policy to allow users in the prp-demo-eng group to manage MFA
 resource "aws_iam_policy" "manage_mfa" {
   name        = "manage-mfa"
   description = "A policy to manage and enforce MFA"
   policy      = data.aws_iam_policy_document.manage_mfa.json
 }
 
-# Attach the manage-mfa policy to the wic-prp-eng group
+# Attach the manage-mfa policy to the prp-demo-eng group
 resource "aws_iam_group_policy_attachment" "manage_mfa" {
   group      = aws_iam_group.wic_prp_eng.name
   policy_arn = aws_iam_policy.manage_mfa.arn
