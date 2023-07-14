@@ -27,7 +27,7 @@ env:
   IMAGE_TAG: ${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}
 
 # env vars and inputs aren't evaluated here, so we need to use this toJson
-concurrency: cd-${{ toJson(env.ENV_NAME) }}-${{ toJson(github.event.inputs.app_name) || 'participant' }}
+concurrency: cd-prod-${{ toJson(github.event.inputs.app_name) || 'participant' }}
 
 jobs:
   deploy:
