@@ -56,7 +56,3 @@ module "auth_github_actions" {
   github_repository        = module.project_config.code_repository
   iam_role_policy_arns     = []
 }
-
-module "iam" {
-  source = "../../modules/iam"
-}
