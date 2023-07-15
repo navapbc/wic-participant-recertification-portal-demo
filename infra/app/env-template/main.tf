@@ -24,6 +24,7 @@ locals {
   participant_service_name                = "${local.project_name}-participant-${var.environment_name}"
   staff_service_name                      = "${local.project_name}-staff-${var.environment_name}"
   document_upload_s3_name                 = "${local.project_name}-doc-upload-${var.environment_name}"
+  side_load_s3_name                       = "${local.project_name}-side-load-${var.environment_name}"
   s3_logging_bucket_name                  = "${local.project_name}-s3-logging-${var.environment_name}"
   waf_name                                = "${local.project_name}-${local.project_name}-waf" # @TODO this should be cleaned up with the root module centralization
 }
@@ -53,7 +54,7 @@ data "aws_subnets" "default" {
 ############################################################################################
 ## S3 logging bucket
 ## - Creates an S3 bucket for logging purposes
-## - Resources that log to this bucket include: doc upload and ALB
+## - Resources that log to this bucket include: doc upload and side load s3 buckets and ALB
 ############################################################################################
 
 module "s3_logging_bucket" {
@@ -63,17 +64,25 @@ module "s3_logging_bucket" {
 
 ############################################################################################
 ## Document upload
+## - Creates an IAM user to pass to the AWS SDK in the participant app for S3 operations
 ## - Creates an S3 bucket
 ## - Sets CORS policy for the document upload S3 bucket
 ############################################################################################
+
+module "s3_machine_user" {
+  # checkov:skip=CKV_AWS_273:Explicitly using an IAM user for longer S3 presigned url expiration times
+
+  source            = "../../modules/iam-machine-user"
+  machine_user_name = local.document_upload_s3_name
+}
 
 module "doc_upload" {
   source               = "../../modules/s3-encrypted"
   s3_bucket_name       = local.document_upload_s3_name
   s3_logging_bucket_id = module.s3_logging_bucket.bucket_id
-  read_group_names     = []
-  write_group_names    = []
-  delete_group_names   = []
+  read_group_names     = [module.s3_machine_user.machine_user_group_name]
+  write_group_names    = [module.s3_machine_user.machine_user_group_name]
+  delete_group_names   = [module.s3_machine_user.machine_user_group_name]
 }
 
 resource "aws_s3_bucket_cors_configuration" "doc_upload_cors" {
@@ -103,6 +112,10 @@ module "service_cluster" {
 ## - Creates an RDS Aurora postgresql database
 ## - Creates an A record for the application
 ## - Creates an ECS service and task for the Remix application
+## - Sets autoscaling for the ECS service
+## - Creates an Eventbridge schedule to update S3 presigned urls saved to the database
+##   so that they don't expire and become inaccessible
+## - Creates an S3 bucket to side load data, such as staff users, into the database
 ############################################################################################
 
 data "aws_ecr_repository" "participant_image_repository" {
@@ -157,6 +170,14 @@ module "participant" {
       name      = "POSTGRES_USER",
       valueFrom = module.participant_database.admin_user_secret_arn,
     },
+    {
+      name      = "AWS_ACCESS_KEY_ID",
+      valueFrom = module.s3_machine_user.access_key_id_secret_arn,
+    },
+    {
+      name      = "AWS_SECRET_ACCESS_KEY",
+      valueFrom = module.s3_machine_user.secret_access_key_secret_arn,
+    },
   ]
   container_env_vars = [
     {
@@ -200,6 +221,8 @@ module "participant" {
     module.participant_database.admin_db_url_secret_arn,
     module.participant_database.admin_password_secret_arn,
     module.participant_database.admin_user_secret_arn,
+    module.s3_machine_user.access_key_id_secret_arn,
+    module.s3_machine_user.secret_access_key_secret_arn,
   ]
   container_bind_mounts = {
     "tmp" : {
@@ -211,6 +234,13 @@ module "participant" {
   depends_on = [
     module.participant_database,
   ]
+}
+
+module "side_load" {
+  source               = "../../modules/s3-encrypted"
+  s3_bucket_name       = local.side_load_s3_name
+  s3_logging_bucket_id = module.s3_logging_bucket.bucket_id
+  read_group_names     = [module.s3_machine_user.machine_user_group_name]
 }
 
 ############################################################################################
