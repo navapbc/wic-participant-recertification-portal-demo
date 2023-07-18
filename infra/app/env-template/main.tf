@@ -16,17 +16,17 @@ module "app_config" {
 }
 
 locals {
-  project_name                            = module.project_config.project_name
-  app_name                                = module.app_config.app_name
-  hosted_zone_domain                      = "wic-services.org"
-  cluster_name                            = "${local.project_name}-${local.app_name}-${var.environment_name}"
-  participant_database_name               = "${local.project_name}-participant-${var.environment_name}"
-  participant_service_name                = "${local.project_name}-participant-${var.environment_name}"
-  staff_service_name                      = "${local.project_name}-staff-${var.environment_name}"
-  document_upload_s3_name                 = "${local.project_name}-doc-upload-${var.environment_name}"
-  side_load_s3_name                       = "${local.project_name}-side-load-${var.environment_name}"
-  s3_logging_bucket_name                  = "${local.project_name}-s3-logging-${var.environment_name}"
-  waf_name                                = "${local.project_name}-${local.project_name}-waf" # @TODO this should be cleaned up with the root module centralization
+  project_name              = module.project_config.project_name
+  app_name                  = module.app_config.app_name
+  hosted_zone_domain        = "wic-recertification.demo.navapbc.com"
+  cluster_name              = "${local.project_name}-${local.app_name}-${var.environment_name}"
+  participant_database_name = "${local.project_name}-participant-${var.environment_name}"
+  participant_service_name  = "${local.project_name}-participant-${var.environment_name}"
+  staff_service_name        = "${local.project_name}-staff-${var.environment_name}"
+  document_upload_s3_name   = "${local.project_name}-doc-upload-${var.environment_name}"
+  side_load_s3_name         = "${local.project_name}-side-load-${var.environment_name}"
+  s3_logging_bucket_name    = "${local.project_name}-s3-logging-${var.environment_name}"
+  waf_name                  = "${local.project_name}-${local.project_name}-waf" # @TODO this should be cleaned up with the root module centralization
 }
 
 data "aws_acm_certificate" "ssl_cert" {
@@ -127,14 +127,6 @@ module "participant_database" {
   database_name = local.participant_database_name
   vpc_id        = data.aws_vpc.default.id
   cidr_blocks   = [data.aws_vpc.default.cidr_block]
-}
-
-module "participant_dns" {
-  source               = "../../modules/dns-alias"
-  hosted_zone_domain   = local.hosted_zone_domain
-  application_alb_name = local.participant_service_name
-  alias_url            = var.participant_url
-  depends_on           = [module.participant]
 }
 
 module "participant" {
@@ -256,14 +248,6 @@ data "aws_ecr_repository" "staff_image_repository" {
 module "staff_secret" {
   source = "../../modules/random-password"
   length = 256
-}
-
-module "staff_dns" {
-  source               = "../../modules/dns-alias"
-  hosted_zone_domain   = local.hosted_zone_domain
-  application_alb_name = local.staff_service_name
-  alias_url            = var.staff_url
-  depends_on           = [module.staff]
 }
 
 module "staff" {
