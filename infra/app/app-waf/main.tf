@@ -1,9 +1,9 @@
 locals {
   project_name     = module.project_config.project_name
-  app_name         = "wic-prp"
+  app_name         = "prp-demo"
   region           = "us-west-2"
   waf_name         = "${local.project_name}-${local.app_name}-waf" # @TODO this should be cleaned up with the root module centralization
-  waf_logging_name = "waf/${local.project_name}"
+  waf_logging_name = "aws-waf-logs-${local.project_name}"
 
   # Set project tags that will be used to tag all resources.
   tags = merge(module.project_config.default_tags, {
@@ -26,9 +26,9 @@ terraform {
   # Terraform does not allow interpolation here, values must be hardcoded.
 
   backend "s3" {
-    bucket         = "wic-prp-636249768232-us-west-2-tf-state"
-    key            = "infra/wic-prp/app-waf.tfstate"
-    dynamodb_table = "wic-prp-tf-state-locks"
+    bucket         = "prp-demo-636249768232-us-west-2-tf-state"
+    key            = "infra/prp-demo/app-waf.tfstate"
+    dynamodb_table = "prp-demo-tf-state-locks"
     region         = "us-west-2"
     encrypt        = "true"
   }

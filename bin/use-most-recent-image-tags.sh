@@ -47,9 +47,9 @@ function main() {
 function getImageTag() {
   APP_NAME=$1
   echo "Getting task definition for ${APP_NAME}..."
-  task_definition_arn=$(aws ecs describe-task-definition --task-definition "wic-prp-${APP_NAME}-${ENV_NAME}" | jq '.taskDefinition.taskDefinitionArn')
+  task_definition_arn=$(aws ecs describe-task-definition --task-definition "prp-demo-${APP_NAME}-${ENV_NAME}" | jq '.taskDefinition.taskDefinitionArn')
   echo "Getting image tag for task definition ${task_definition_arn}..."
-  image_tag=$(aws ecs describe-task-definition --task-definition "wic-prp-${APP_NAME}-${ENV_NAME}" | jq '.taskDefinition.containerDefinitions[0].image | split(":")[1]' --raw-output)
+  image_tag=$(aws ecs describe-task-definition --task-definition "prp-demo-${APP_NAME}-${ENV_NAME}" | jq '.taskDefinition.containerDefinitions[0].image | split(":")[1]' --raw-output)
   echo "Using image tag ${image_tag}..."
   echo "${APP_NAME}_image_tag=\"$image_tag\"" >> image_tags.tfvars
   echo ""

@@ -16,21 +16,17 @@ module "app_config" {
 }
 
 locals {
-  project_name                            = module.project_config.project_name
-  app_name                                = module.app_config.app_name
-  hosted_zone_domain                      = "wic-services.org"
-  cluster_name                            = "${local.project_name}-${local.app_name}-${var.environment_name}"
-  participant_database_name               = "${local.project_name}-participant-${var.environment_name}"
-  participant_service_name                = "${local.project_name}-participant-${var.environment_name}"
-  staff_cognito_user_pool_name            = "${local.project_name}-staff-${var.environment_name}"
-  staff_service_name                      = "${local.project_name}-staff-${var.environment_name}"
-  document_upload_s3_name                 = "${local.project_name}-doc-upload-${var.environment_name}"
-  refresh_s3_presigned_urls_schedule_name = "${local.project_name}-s3-refresh-schedule-${var.environment_name}"
-  side_load_s3_name                       = "${local.project_name}-side-load-${var.environment_name}"
-  s3_logging_bucket_name                  = "${local.project_name}-s3-logging-${var.environment_name}"
-  contact_email                           = "wic-projects-team@navapbc.com"
-  staff_idp_client_domain                 = "${var.environment_name}-idp.wic-services.org"
-  waf_name                                = "${local.project_name}-${local.project_name}-waf" # @TODO this should be cleaned up with the root module centralization
+  project_name              = module.project_config.project_name
+  app_name                  = module.app_config.app_name
+  hosted_zone_domain        = "wic-recertification.demo.navapbc.com"
+  cluster_name              = "${local.project_name}-${local.app_name}-${var.environment_name}"
+  participant_database_name = "${local.project_name}-participant-${var.environment_name}"
+  participant_service_name  = "${local.project_name}-participant-${var.environment_name}"
+  staff_service_name        = "${local.project_name}-staff-${var.environment_name}"
+  document_upload_s3_name   = "${local.project_name}-doc-upload-${var.environment_name}"
+  side_load_s3_name         = "${local.project_name}-side-load-${var.environment_name}"
+  s3_logging_bucket_name    = "${local.project_name}-s3-logging-${var.environment_name}"
+  waf_name                  = "${local.project_name}-${local.project_name}-waf" # @TODO this should be cleaned up with the root module centralization
 }
 
 data "aws_acm_certificate" "ssl_cert" {
@@ -133,13 +129,6 @@ module "participant_database" {
   cidr_blocks   = [data.aws_vpc.default.cidr_block]
 }
 
-module "participant_dns" {
-  source               = "../../modules/dns-alias"
-  hosted_zone_domain   = local.hosted_zone_domain
-  application_alb_name = local.participant_service_name
-  alias_url            = var.participant_url
-}
-
 module "participant" {
   source                             = "../../modules/service"
   service_name                       = local.participant_service_name
@@ -239,25 +228,6 @@ module "participant" {
   ]
 }
 
-module "participant_autoscale" {
-  source                      = "../../modules/service-autoscaling"
-  ecs_cluster_name            = local.cluster_name
-  ecs_service_name            = local.participant_service_name
-  ecs_task_executor_role_name = "${local.participant_service_name}-task-executor"
-}
-
-module "refresh_s3_presigned_urls" {
-  source                  = "../../modules/task-scheduled"
-  schedule_name           = local.refresh_s3_presigned_urls_schedule_name
-  cluster_name            = local.cluster_name
-  task_definition_family  = local.participant_service_name
-  container_task_override = "{\"containerOverrides\": [{\"name\": \"${local.participant_service_name}\", \"command\": [\"npm\", \"run\", \"refresh-s3-urls\"]}]}"
-  security_group_ids      = [module.participant.app_security_group_id]
-  subnet_ids              = data.aws_subnets.default.ids
-  schedule_expression     = "cron(0 9 * * ? *)" # Run once a day at ~3am US time
-  schedule_enabled        = true
-}
-
 module "side_load" {
   source               = "../../modules/s3-encrypted"
   s3_bucket_name       = local.side_load_s3_name
@@ -267,8 +237,6 @@ module "side_load" {
 
 ############################################################################################
 ## The staff application
-## - Creates a Cognito user pool and client
-## - Creates a JWT secret required by the staff application
 ## - Creates an A record for the application
 ## - Creates an ECS service and task for the Lowdefy application
 ############################################################################################
@@ -277,46 +245,9 @@ data "aws_ecr_repository" "staff_image_repository" {
   name = "${local.project_name}-staff"
 }
 
-data "aws_ses_domain_identity" "verified_domain" {
-  domain = "wic-services.org"
-}
-
-module "staff_idp" {
-  source                     = "../../modules/cognito"
-  pool_name                  = local.staff_cognito_user_pool_name
-  password_minimum_length    = 15
-  email_sending_account      = "DEVELOPER"
-  from_email_address         = "WIC Montana Staff Portal <no-reply@wic-services.org>"
-  reply_to_email_address     = local.contact_email
-  email_source_arn           = data.aws_ses_domain_identity.verified_domain.arn
-  invite_email_message       = "Thank you for participating in Montana's WIC recertification pilot. Your username is {username} and {####} is your temporary password. To activate your account, log into the WIC Staff Portal at https://${var.staff_url}, enter your temporary password, and follow the prompts to reset your password. Please reach out to our technical team at ${local.contact_email} at any time to resolve any issues you encounter."
-  invite_email_subject       = "Please activate your WIC Staff Portal account"
-  verification_email_message = "Thank you for participating in Montana's WIC recertification pilot. We received a request to reset your WIC Staff Portal password. To complete this request, go to https://${var.staff_url} and enter this password reset code {####}. If you didn't request a password reset, please ignore this email – your password won't be changed. Please reach out to our technical team at ${local.contact_email} at any time to resolve any issues you encounter."
-  verification_email_subject = "Reset your WIC Staff Portal password"
-  client_callback_urls       = ["https://${var.staff_url}/auth/openid-callback"]
-  client_logout_urls         = ["https://${var.staff_url}/login"]
-  client_domain              = local.staff_idp_client_domain
-  hosted_zone_domain         = "wic-services.org"
-  waf_name                   = local.waf_name
-}
-
 module "staff_secret" {
   source = "../../modules/random-password"
   length = 256
-}
-
-resource "aws_ssm_parameter" "staff_jwt_secret" {
-  # checkov:skip=CKV_AWS_337:Skip creating separate IAM roles for KMS keys
-  name  = "/metadata/staff/${var.environment_name}-jwt-secret"
-  type  = "SecureString"
-  value = base64encode(module.staff_secret.random_password)
-}
-
-module "staff_dns" {
-  source               = "../../modules/dns-alias"
-  hosted_zone_domain   = local.hosted_zone_domain
-  application_alb_name = local.staff_service_name
-  alias_url            = var.staff_url
 }
 
 module "staff" {
@@ -334,39 +265,11 @@ module "staff" {
   container_port       = 3000
   enable_exec          = var.staff_enable_exec
   enable_healthcheck   = false
-  container_secrets = [
-    {
-      name      = "LOWDEFY_SECRET_PG_CONNECTION_STRING",
-      valueFrom = module.participant_database.admin_db_url_secret_arn,
-    },
-    {
-      name      = "LOWDEFY_SECRET_OPENID_CLIENT_ID",
-      valueFrom = module.staff_idp.client_id_secret_arn,
-    },
-    {
-      name      = "LOWDEFY_SECRET_OPENID_CLIENT_SECRET",
-      valueFrom = module.staff_idp.client_secret_secret_arn,
-    },
-    {
-      name      = "LOWDEFY_SECRET_JWT_SECRET",
-      valueFrom = aws_ssm_parameter.staff_jwt_secret.arn,
-    },
-  ]
-  container_env_vars = [
-    {
-      name  = "LOWDEFY_SECRET_OPENID_DOMAIN",
-      value = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${module.staff_idp.user_pool_id}/.well-known/openid-configuration",
-    },
 
-  ]
   ssm_resource_paths = [
     module.participant_database.admin_db_url_secret_arn,
-    module.staff_idp.client_id_secret_arn,
-    module.staff_idp.client_secret_secret_arn,
-    aws_ssm_parameter.staff_jwt_secret.arn,
   ]
   depends_on = [
     module.participant_database,
-    module.staff_idp,
   ]
 }

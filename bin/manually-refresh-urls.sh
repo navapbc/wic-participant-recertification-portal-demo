@@ -9,10 +9,10 @@ ENV_NAME=$1
 # The renewal threshold in seconds. If a presigned url is older than this many seconds, it is renewed.
 RENEWAL_THRESHOLD=$2
 
-CLUSTER_NAME="wic-prp-app-${ENV_NAME}"
-SERVICE_NAME="wic-prp-participant-${ENV_NAME}"
-TASK_DEFINITION_NAME="wic-prp-participant-${ENV_NAME}"
-CONTAINER_NAME="wic-prp-participant-${ENV_NAME}"
+CLUSTER_NAME="prp-demo-app-${ENV_NAME}"
+SERVICE_NAME="prp-demo-participant-${ENV_NAME}"
+TASK_DEFINITION_NAME="prp-demo-participant-${ENV_NAME}"
+CONTAINER_NAME="prp-demo-participant-${ENV_NAME}"
 
 NETWORK_CONFIG=$(aws ecs describe-services --cluster $CLUSTER_NAME --service $SERVICE_NAME | jq -r '.services[0].networkConfiguration')
 
