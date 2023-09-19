@@ -123,12 +123,17 @@ data "aws_ecr_repository" "participant_image_repository" {
 }
 
 module "participant_database" {
+  source        = "../../modules/database-serverless"
+  database_name = local.participant_database_name
+  vpc_id        = data.aws_vpc.default.id
+  cidr_blocks   = [data.aws_vpc.default.cidr_block]
+}
+module "participant_rds" {
   source        = "../../modules/database"
   database_name = local.participant_database_name
   vpc_id        = data.aws_vpc.default.id
   cidr_blocks   = [data.aws_vpc.default.cidr_block]
 }
-
 module "participant" {
   source                             = "../../modules/service"
   service_name                       = local.participant_service_name
