@@ -146,7 +146,7 @@ resource "aws_db_parameter_group" "rds_query_logging_mysql" {
 ################################################################################
 
 resource "aws_iam_role" "rds_enhanced_monitoring" {
-  name               = "${var.database_name}-rds-enhanced-monitoring-demo"
+  name               = "${var.database_name}-rds-enhanced-monitoring"
   assume_role_policy = data.aws_iam_policy_document.rds_enhanced_monitoring.json
 }
 
