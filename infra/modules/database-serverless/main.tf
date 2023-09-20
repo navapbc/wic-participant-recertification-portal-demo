@@ -19,10 +19,10 @@ module "random_admin_database_password" {
 
 locals {
   admin_user                 = "app_usr"
-  admin_user_secret_name     = "/metadata/db/${var.database_name}-admin-user"
-  admin_password_secret_name = "/metadata/db/${var.database_name}-admin-password"
-  admin_db_url_secret_name   = "/metadata/db/${var.database_name}-admin-db-url"
-  admin_db_host_secret_name  = "/metadata/db/${var.database_name}-admin-db-host"
+  admin_user_secret_name     = "/metadata/db-serverless/${var.database_name}-admin-user"
+  admin_password_secret_name = "/metadata/db-serverless/${var.database_name}-admin-password"
+  admin_db_url_secret_name   = "/metadata/db-serverless/${var.database_name}-admin-db-url"
+  admin_db_host_secret_name  = "/metadata/db-serverless/${var.database_name}-admin-db-host"
   database_name_formatted    = replace("${var.database_name}", "-", "_")
   admin_password             = var.admin_password == "" ? module.random_admin_database_password.random_password : var.admin_password
 }
@@ -204,13 +204,13 @@ data "aws_kms_key" "database" {
 
 # create backup vault
 resource "aws_backup_vault" "database" {
-  name        = "${var.database_name}-vault"
+  name        = "${var.database_name}-serverless-vault"
   kms_key_arn = data.aws_kms_key.database.arn
 }
 
 # create IAM role
 resource "aws_iam_role" "database_backup" {
-  name               = "${var.database_name}-database-backup"
+  name               = "${var.database_name}-database-serverless-backup"
   assume_role_policy = data.aws_iam_policy_document.database_backup.json
 }
 
@@ -249,7 +249,7 @@ resource "aws_backup_selection" "database_backup" {
 ############################################################################################
 
 resource "aws_iam_role" "rds_enhanced_monitoring" {
-  name               = "${var.database_name}-rds-enhanced-monitoring"
+  name               = "${var.database_name}-rds-serverless-enhanced-monitoring"
   assume_role_policy = data.aws_iam_policy_document.rds_enhanced_monitoring.json
 }
 

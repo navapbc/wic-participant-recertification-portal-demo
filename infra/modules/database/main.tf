@@ -9,8 +9,8 @@ module "random_admin_database_password" {
 
 locals {
   admin_user                 = "app_usr"
-  admin_user_secret_name     = "/metadata/db/${var.database_name}-admin-user-rds"     #reset this
-  admin_password_secret_name = "/metadata/db/${var.database_name}-admin-password-rds" #reset this
+  admin_user_secret_name     = "/metadata/db/${var.database_name}-admin-user"
+  admin_password_secret_name = "/metadata/db/${var.database_name}-admin-password"
   admin_db_url_secret_name   = "/metadata/db/${var.database_name}-admin-db-url"
   admin_db_host_secret_name  = "/metadata/db/${var.database_name}-admin-db-host"
   database_name_formatted    = replace("${var.database_name}", "-", "_")
@@ -23,7 +23,7 @@ locals {
 
 resource "aws_security_group" "database" {
   description = "Allow inbound TCP access to database port"
-  name        = "${var.database_name}-database-rds"
+  name        = "${var.database_name}-database"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -44,6 +44,7 @@ resource "aws_security_group" "database" {
 ############################
 resource "aws_db_instance" "database" {
   # checkov:skip=CKV_AWS_157:Multi-AZ is mostly unessecary for a project of this size.
+  # checkov:skip=CKV_AWS_354:Need to assign the access permissions for the KMS key.
   identifier                          = var.database_name
   allocated_storage                   = 20
   engine                              = var.database_type == "mysql" ? "mysql" : "postgres"
@@ -55,7 +56,7 @@ resource "aws_db_instance" "database" {
   apply_immediately                   = true
   deletion_protection                 = true
   storage_encrypted                   = true
-  skip_final_snapshot                 = false
+  skip_final_snapshot                 = true
   vpc_security_group_ids              = ["${aws_security_group.database.id}"]
   username                            = local.admin_user
   password                            = local.admin_password
@@ -65,17 +66,20 @@ resource "aws_db_instance" "database" {
   monitoring_role_arn                 = aws_iam_role.rds_enhanced_monitoring.arn
   parameter_group_name                = "${var.database_name}-${var.database_type}"
   copy_tags_to_snapshot               = true
+  performance_insights_enabled        = true
   backup_retention_period             = 35            # enables automated backups; default is 0 days in terraform.
   backup_window                       = "06:00-06:30" # time given in UTC; This is 2am to 2:30am eastern
 }
 
 resource "aws_ssm_parameter" "admin_password" {
+  # checkov:skip=CKV_AWS_337:Skip creating separate IAM roles for KMS keys
   name  = local.admin_password_secret_name
   type  = "SecureString"
   value = local.admin_password
 }
 
 resource "aws_ssm_parameter" "admin_db_url" {
+  # checkov:skip=CKV_AWS_337:Skip creating separate IAM roles for KMS keys
   name  = local.admin_db_url_secret_name
   type  = "SecureString"
   value = "${var.database_type}://${local.admin_user}:${urlencode(local.admin_password)}@${aws_db_instance.database.endpoint}:${var.database_port}/${local.database_name_formatted}?schema=public"
@@ -86,6 +90,7 @@ resource "aws_ssm_parameter" "admin_db_url" {
 }
 
 resource "aws_ssm_parameter" "admin_db_host" {
+  # checkov:skip=CKV_AWS_337:Skip creating separate IAM roles for KMS keys
   name  = local.admin_db_host_secret_name
   type  = "SecureString"
   value = "${aws_db_instance.database.endpoint}:${var.database_port}"
@@ -96,6 +101,7 @@ resource "aws_ssm_parameter" "admin_db_host" {
 }
 
 resource "aws_ssm_parameter" "admin_user" {
+  # checkov:skip=CKV_AWS_337:Skip creating separate IAM roles for KMS keys
   name  = local.admin_user_secret_name
   type  = "SecureString"
   value = local.admin_user
